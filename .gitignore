@@ -1,0 +1,33 @@
+# === 通用 ===
+.DS_Store
+*.log
+.env*
+build/
+dist/
+
+# IDE 临时文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === Go ===
+# 编译产物
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# 测试产物
+*.test
+*.out
+coverage.html
+
+# Go 工作区文件
+go.work
+go.work.sum
+
+# vendor 目录（如使用 go mod vendor 且不想提交，取消注释）
+# vendor/
