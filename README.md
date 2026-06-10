@@ -1,25 +1,36 @@
 # go-doudizhu-lab
 
-用 Go 实现斗地主（Dou Dizhu）的实验项目。目标是从零搭建斗地主的核心玩法逻辑——发牌、牌型判定、出牌规则、对局流程——作为 Go 语言与游戏逻辑的练习场。
+前后端分离的斗地主（Dou Dizhu）全栈游戏开发学习项目。重点不是做出一个完整游戏，而是完整走一遍**全栈游戏开发流程**：客户端开发、服务器开发、通信协议设计、联调与部署。
 
-> 项目刚初始化，代码尚未开始编写，以下安装与使用方式为预期约定，随开发进度更新。
+- **前端**：Cocos Creator 3.8.8（TypeScript）
+- **后端**：Go
+- **通信**：WebSocket（协议定义统一放在 `proto/`）
 
-## 安装
+## 目录结构
 
-需要 Go 1.22 或更高版本。
-
-```bash
-git clone <仓库地址>
-cd go-doudizhu-lab
-go mod tidy
+```
+client/    # 游戏前端（Cocos Creator 3.8.8 项目）
+server/    # 游戏后端（Go）
+proto/     # 前后端共享的通信协议定义
+docs/      # 设计文档与学习笔记
+scripts/   # 开发与构建脚本
 ```
 
-## 使用
+各目录内有独立 README 说明用途和初始化方式。
+
+## 环境要求
+
+- Go 1.22+
+- Cocos Creator 3.8.8（通过 Cocos Dashboard 安装）
+
+## 快速开始
 
 ```bash
-# 运行
-go run ./cmd/doudizhu
+# 后端
+cd server
+go run ./cmd/server
 
-# 测试
-go test ./...
+# 前端：用 Cocos Creator 3.8.8 打开 client/ 目录，点击预览
 ```
+
+> 项目处于早期阶段，前后端代码均从零搭建中，以上命令随开发进度生效。

@@ -31,3 +31,12 @@ go.work.sum
 
 # vendor 目录（如使用 go mod vendor 且不想提交，取消注释）
 # vendor/
+
+# === Cocos Creator (client/) ===
+client/library/
+client/temp/
+client/local/
+client/build/
+client/profiles/
+client/native/engine/
+
