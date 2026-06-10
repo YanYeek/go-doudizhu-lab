@@ -136,7 +136,21 @@
 | 协议层（`proto/`） | Pitaya 的 protocol 包 | 路由压缩、心跳、握手设计 |
 | 匹配、断线重连（后期） | due 的 Gate/Node 分层、Nakama 的 matchmaker 文档 | 网关与逻辑分离后会话如何迁移 |
 
-### 5.3 关于 Zinx 的最终态度
+### 5.3 分阶段落地路线图
+
+把上面的选型结论落到本仓库的目录结构上，按依赖顺序推进：
+
+| 阶段 | 目标 | 涉及目录 | 对照读物 |
+|------|------|----------|----------|
+| 1. 纯逻辑先行 | 牌定义、洗牌发牌、牌型识别与比较，全部配表驱动测试，不依赖任何网络代码 | `server/internal/card`、`server/internal/pattern` | 无需框架，专注规则本身 |
+| 2. 协议与连接 | 定义 `C2S_`/`S2C_` 消息（含心跳、错误码），实现 WebSocket 连接管理与消息编解码，先做到回显 | `proto/`、`server/internal/ws` | Zinx 的 Connection/MsgHandler、Pitaya 的 protocol 包 |
+| 3. 房间与状态机 | 单房间单 goroutine，叫地主→出牌→结算的状态机，命令式同步（客户端发命令→服务器验证→广播状态） | `server/internal/room`、`server/internal/game` | Cherry 的 Actor 邮箱模式、due 的 Node 事件路由 |
+| 4. 前后端联调 | Cocos 客户端接入 WebSocket，渲染手牌与出牌交互，跑通一局完整对局 | `client/assets/scripts/` | Nakama 的客户端 SDK 设计（接口形态参考） |
+| 5. 进阶能力 | 断线重连、会话恢复、简单匹配；此时再评估是否需要网关/逻辑分层 | `server/internal/room`、`server/internal/ws` | due 的 Gate/Node 分层、Nakama 的 matchmaker 文档 |
+
+每完成一个阶段，把自己的实现与对照读物的工业解法做一次差异复盘，结论沉淀到 `docs/`——这是本学习项目获取「框架级认知」的主要方式。
+
+### 5.4 关于 Zinx 的最终态度
 
 之前在 Zinx 上投入的学习没有贬值：它仍在维护（2026-06 还有提交），其网络层设计仍是合格的教学样本。真正的版本判断是——**Zinx 教会你的是 2018 年起就不变的网络层基本功，而 due/Cherry 教的是 2023 年后才成型的模块化/Actor 工程范式**，两者是衔接关系，不是替代关系。
 
