@@ -1,0 +1,4 @@
+# due reads configuration from ./etc relative to the process working directory.
+mode = "debug"
+timezone = "Local"
+shutdownMaxWaitTime = "3s"

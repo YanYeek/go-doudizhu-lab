@@ -1,11 +1,8 @@
 package main
 
-import (
-	"fmt"
-
-	"github.com/YanYeek/go-doudizhu-lab/server/internal/greeting"
-)
+import "github.com/dobyte/due/v2"
 
 func main() {
-	fmt.Println(greeting.Welcome("斗地主服务器"))
+	container := due.NewContainer()
+	container.Serve()
 }
