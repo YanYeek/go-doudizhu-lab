@@ -5,3 +5,47 @@
 - 一键启动本地开发环境（起后端 + 提示打开 Cocos 预览）
 - 协议代码生成（如使用 Protobuf）
 - 构建与部署脚本
+
+## Python 开发助手
+
+`python/dev.py` 是零第三方依赖的跨平台开发入口，可在 Windows、macOS 和 Linux
+上运行。所有命令都可以从仓库任意目录执行。
+
+```bash
+# 一键启动 Redis、etcd，并在前台运行 Gate
+python scripts/python/dev.py up
+
+# 查看 Redis、etcd 与 Gate 状态
+python scripts/python/dev.py status
+
+# 运行测试、静态检查与构建
+python scripts/python/dev.py check
+
+# 停止本地 Docker 依赖
+python scripts/python/dev.py deps-down
+```
+
+完整命令：
+
+| 命令 | 用途 |
+|------|------|
+| `up` | 启动 Docker 依赖，并在前台运行 Gate |
+| `server` | 只运行 Gate，适合依赖已经启动时使用 |
+| `deps-up` | 只启动 Redis 与 etcd |
+| `deps-down` | 停止并删除 Redis 与 etcd 容器 |
+| `status` | 查看依赖与 Gate 端口状态 |
+| `test` | 运行全部 Go 测试 |
+| `vet` | 运行 Go 静态检查 |
+| `build` | 构建服务器 |
+| `check` | 依次运行测试、静态检查与构建 |
+| `doctor` | 检查 Python、Go、Docker 与端口状态 |
+
+`up` 会让服务器保持在前台，方便查看日志。按 `Ctrl+C` 会停止 Gate，但保留
+Redis 与 etcd，便于继续开发；当天开发结束时再执行 `deps-down`。
+
+如果 Docker 引擎尚未运行，脚本会给出提示。Windows 与 macOS 请启动 Docker
+Desktop；Linux 请启动 Docker 服务。
+
+该脚本定位为本地开发助手。未来部署到 Linux 服务器时，不使用 `go run` 长期
+运行服务，而是构建正式二进制文件，并交由 systemd 或容器负责启动、重启与日志
+管理；届时可以继续在本目录增加独立的部署命令。

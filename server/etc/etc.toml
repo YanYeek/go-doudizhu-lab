@@ -2,3 +2,20 @@
 mode = "debug"
 timezone = "Local"
 shutdownMaxWaitTime = "3s"
+
+[cluster.gate]
+name = "exploding-minions-gate"
+addr = ":0"
+
+[network.ws.server]
+addr = ":3553"
+path = "/ws"
+origins = ["*"]
+heartbeatInterval = "10s"
+
+[locate.redis]
+addrs = ["127.0.0.1:6379"]
+prefix = "exploding-minions:locate"
+
+[registry.etcd]
+endpoints = ["127.0.0.1:2379"]
