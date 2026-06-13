@@ -15,6 +15,9 @@
 # 一键启动 Redis、etcd，并在前台运行 Gate
 python scripts/python/dev.py up
 
+# 另开一个终端，运行 Go 测试客户端验证通信链路
+python scripts/python/dev.py testclient
+
 # 查看 Redis、etcd 与 Gate 状态
 python scripts/python/dev.py status
 
@@ -31,6 +34,7 @@ python scripts/python/dev.py deps-down
 |------|------|
 | `up` | 启动 Docker 依赖，并在前台运行 Gate |
 | `server` | 只运行 Gate，适合依赖已经启动时使用 |
+| `testclient` | 运行一次性 Go 测试客户端，向 Gate 发一条消息验证链路（需先 `up`） |
 | `deps-up` | 只启动 Redis 与 etcd |
 | `deps-down` | 停止并删除 Redis 与 etcd 容器 |
 | `status` | 查看依赖与 Gate 端口状态 |

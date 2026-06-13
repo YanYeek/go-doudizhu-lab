@@ -169,6 +169,17 @@ def server() -> None:
     run(["go", "run", "./cmd/server"])
 
 
+def testclient() -> None:
+    require_command("go")
+    if not port_is_open(SERVICES["websocket gate"]):
+        raise DevCommandError(
+            "Gate 未在 127.0.0.1:3553 监听。请先在另一个终端运行 "
+            "`python scripts/python/dev.py up` 启动 Gate 与依赖。"
+        )
+    print("\n运行 Go 测试客户端：向 Gate 发送一条 Greet 请求并打印响应。")
+    run(["go", "run", "./cmd/testclient"])
+
+
 def up() -> None:
     deps_up()
     server()
@@ -235,6 +246,7 @@ def create_parser() -> argparse.ArgumentParser:
     commands = {
         "up": "启动 Redis、etcd，并在前台运行 Gate",
         "server": "只在前台运行 Gate",
+        "testclient": "运行一次性 Go 测试客户端，向 Gate 发消息验证链路",
         "deps-up": "只启动 Redis 与 etcd",
         "deps-down": "停止并删除 Redis 与 etcd 容器",
         "status": "查看依赖与 Gate 端口状态",
@@ -256,6 +268,7 @@ def main() -> int:
     commands = {
         "up": up,
         "server": server,
+        "testclient": testclient,
         "deps-up": deps_up,
         "deps-down": deps_down,
         "status": status,
