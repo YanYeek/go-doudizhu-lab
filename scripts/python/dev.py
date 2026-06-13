@@ -127,7 +127,7 @@ def vet() -> None:
 
 def build() -> None:
     require_command("go")
-    with tempfile.TemporaryDirectory(prefix="exploding-minions-build-") as directory:
+    with tempfile.TemporaryDirectory(prefix="doudizhu-build-") as directory:
         output = Path(directory) / "server"
         run(["go", "build", "-o", str(output), "./cmd/server"])
 
@@ -169,7 +169,7 @@ def doctor() -> None:
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="爆炸小黄人服务器跨平台开发助手",
+        description="斗地主服务器跨平台开发助手",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

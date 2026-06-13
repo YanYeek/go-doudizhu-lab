@@ -178,7 +178,7 @@ go run ./cmd/server
 
 ```text
 Gate
-Name: exploding-minions-gate
+Name: doudizhu-gate
 Server: [ws] 0.0.0.0:3553
 Locator: redis
 Registry: etcd
@@ -203,7 +203,7 @@ Registry: etcd
 客户端 → Gate → 没有可以处理消息的 Node
 ```
 
-Gate 负责连接与转发，不负责爆炸小黄人的游戏逻辑。下一课需要加入 Node，并注册
+Gate 负责连接与转发，不负责斗地主的游戏逻辑。下一课需要加入 Node，并注册
 第一条消息路由，才能形成完整的请求与响应：
 
 ```text
