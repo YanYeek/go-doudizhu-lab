@@ -9,11 +9,14 @@
 |----------|--------|--------|
 | 文档类工作（写/改 `docs/`、README、注释、规则与笔记） | **codex** | 委派给 codex（`/codex` 相关 skill 或 codex 子代理） |
 | 代码审核 / Code Review | **codex** | 用 `/codex:review` |
-| Git 管理（commit、push、分支、合并、写提交信息） | **codex** | 委派 codex 执行 git 操作 |
+| Git 管理（暂存、commit、分支、合并、写提交信息） | **codex** | 委派 codex 执行 git 操作 |
+| `git push`（推送到远端） | **Claude Code（Opus 4.8）** | codex 沙箱默认禁网，push 由 Claude Code 兜底 |
 | 高难度任务（复杂设计、疑难排查、架构决策） | **Claude Code（Opus 4.8）** | 自己处理 |
 | 编写代码（实现功能、写测试） | **Claude Code（Opus 4.8）** | 自己处理 |
 
-- 默认优先把上表前三类（文档、评审、Git）下派给 codex；只有高难度任务和写代码才由 Opus 4.8 亲自做。
+- 默认优先把上表前三类（文档、评审、Git 本地操作）下派给 codex；只有高难度任务、写代码和 `git push` 才由 Opus 4.8 亲自做。
+- **实测约束**：codex 运行在 workspace-write 沙箱里，能读写工作区、能本地 commit，但**不能访问网络**——所以 `git push`、拉取依赖等联网操作一律由 Claude Code 完成。
+- codex 的 `/codex:*` skill（如 `/codex:review`）在会话启动时加载；新装或刚启用后需**重启会话**才能用。本会话内若 skill 不可用，可直接调底层 `codex exec` CLI 代替。
 - 若 codex 不可用（未登录 / CLI 缺失 / 调用失败），降级由 Claude Code 直接完成，并提示用户。
 - 该分工规则可被用户的临时明确指令覆盖（例如用户说"这次你自己写文档"）。
 
