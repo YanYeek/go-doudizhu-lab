@@ -7,11 +7,26 @@ shutdownMaxWaitTime = "3s"
 name = "doudizhu-gate"
 addr = ":0"
 
+[cluster.node]
+name = "doudizhu-node"
+addr = ":0"
+# 用 json 编解码消息体。due 默认是 proto，但本项目第一阶段用 json + 手写结构体
+# （见学习笔记），更直观；客户端与 Node 必须一致，否则两端无法解析对方的消息。
+codec = "json"
+
+# Go 测试客户端（cmd/testclient）的编解码器，必须与 Node 保持一致。
+[cluster.client]
+codec = "json"
+
 [network.ws.server]
 addr = ":3553"
 path = "/ws"
 origins = ["*"]
 heartbeatInterval = "10s"
+
+# Go 测试客户端（cmd/testclient）连接 Gate 用的地址，需带上 server 的 path。
+[network.ws.client]
+url = "ws://127.0.0.1:3553/ws"
 
 [locate.redis]
 addrs = ["127.0.0.1:6379"]
