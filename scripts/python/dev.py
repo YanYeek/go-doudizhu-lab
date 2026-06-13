@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import socket
 import subprocess
@@ -53,21 +54,79 @@ def require_command(name: str) -> None:
 
 
 def docker_is_ready() -> bool:
-    result = run(
+    result = subprocess.run(
         ["docker", "info"],
+        cwd=SERVER_DIR,
         check=False,
+        text=True,
         capture_output=True,
     )
     return result.returncode == 0
 
 
-def require_docker() -> None:
-    require_command("docker")
-    if not docker_is_ready():
-        raise DevCommandError(
-            "Docker 引擎尚未运行。请先启动 Docker Desktop，"
-            "或在 Linux 上启动 Docker 服务。"
+def start_docker_desktop() -> bool:
+    if sys.platform == "win32":
+        candidates = [
+            Path(os.environ.get("ProgramFiles", "")) / "Docker/Docker/Docker Desktop.exe",
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Docker/Docker Desktop.exe",
+        ]
+        executable = next((path for path in candidates if path.is_file()), None)
+        if executable is None:
+            return False
+
+        print(f"\nDocker 引擎未运行，正在启动 Docker Desktop：{executable}")
+        subprocess.Popen(
+            [str(executable)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+            | subprocess.DETACHED_PROCESS,
         )
+        return True
+
+    if sys.platform == "darwin" and shutil.which("open"):
+        print("\nDocker 引擎未运行，正在启动 Docker Desktop。")
+        subprocess.Popen(
+            ["open", "-a", "Docker"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+
+    return False
+
+
+def wait_for_docker(timeout: float = 120.0) -> None:
+    deadline = time.monotonic() + timeout
+    print("等待 Docker 引擎就绪", end="", flush=True)
+
+    while time.monotonic() < deadline:
+        if docker_is_ready():
+            print("\nDocker 引擎已就绪。")
+            return
+        print(".", end="", flush=True)
+        time.sleep(2)
+
+    print()
+    raise DevCommandError(
+        f"等待 Docker 引擎启动超时（{int(timeout)} 秒）。"
+        "请查看 Docker Desktop 是否需要手动确认或登录。"
+    )
+
+
+def require_docker(*, auto_start: bool = False) -> None:
+    require_command("docker")
+    if docker_is_ready():
+        return
+
+    if auto_start and start_docker_desktop():
+        wait_for_docker()
+        return
+
+    raise DevCommandError(
+        "Docker 引擎尚未运行。Windows 与 macOS 请启动 Docker Desktop，"
+        "Linux 请启动 Docker 服务。"
+    )
 
 
 def port_is_open(port: int, host: str = "127.0.0.1") -> bool:
@@ -93,7 +152,7 @@ def wait_for_ports(ports: Sequence[int], timeout: float = 30.0) -> None:
 
 
 def deps_up() -> None:
-    require_docker()
+    require_docker(auto_start=True)
     run(["docker", "compose", "up", "-d"])
     wait_for_ports([SERVICES["etcd"], SERVICES["redis"]])
     print("\nRedis 与 etcd 已就绪。")

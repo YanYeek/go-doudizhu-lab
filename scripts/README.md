@@ -43,8 +43,10 @@ python scripts/python/dev.py deps-down
 `up` 会让服务器保持在前台，方便查看日志。按 `Ctrl+C` 会停止 Gate，但保留
 Redis 与 etcd，便于继续开发；当天开发结束时再执行 `deps-down`。
 
-如果 Docker 引擎尚未运行，脚本会给出提示。Windows 与 macOS 请启动 Docker
-Desktop；Linux 请启动 Docker 服务。
+执行 `up` 或 `deps-up` 时，如果 Docker 引擎尚未运行，脚本会在 Windows 和
+macOS 上自动启动 Docker Desktop，并等待引擎就绪后继续。`status` 和
+`deps-down` 只检测当前状态，不会自动启动 Docker。Linux 上仍需自行启动 Docker
+服务，因为服务管理方式和权限因发行版而异。
 
 该脚本定位为本地开发助手。未来部署到 Linux 服务器时，不使用 `go run` 长期
 运行服务，而是构建正式二进制文件，并交由 systemd 或容器负责启动、重启与日志
