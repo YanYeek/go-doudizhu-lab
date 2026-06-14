@@ -8,23 +8,60 @@
 package session
 
 import (
+	"fmt"
+
 	"github.com/dobyte/due/v2/cluster"
 	"github.com/dobyte/due/v2/cluster/node"
 	"github.com/dobyte/due/v2/log"
+
+	"github.com/YanYeek/go-doudizhu-lab/server/internal/route"
 )
 
-// Register 把连接生命周期事件处理器注册到 Node 上。
-// 注册后，Gate 转发来的 connect/disconnect 事件就有 Node 接收，
+// Register 把玩家身份相关的处理器注册到 Node 上：
+//   - Login 路由：客户端报上 uid，把连接绑定到该玩家；
+//   - connect/disconnect 事件：连接的建立与断开。
+//
+// 注册事件处理器后，Gate 转发来的 connect/disconnect 就有 Node 接收，
 // 不再出现 "not found event" 警告（见 docs/learning/07-route-vs-event.md）。
 func Register(proxy *node.Proxy) {
+	proxy.Router().AddRouteHandler(route.Login, onLogin)
 	proxy.AddEventHandler(cluster.Connect, onConnect)
+	proxy.AddEventHandler(cluster.Reconnect, onReconnect)
 	proxy.AddEventHandler(cluster.Disconnect, onDisconnect)
+}
+
+// onLogin 处理登录：把当前连接绑定到客户端报上来的 uid。
+// 绑定（BindGate）之后，网关就在「连接」和「玩家」之间建立了对应关系——
+// 这条连接后续的断开事件、服务端推送都能落到具体玩家身上。
+func onLogin(ctx node.Context) {
+	var req route.LoginReq
+	if err := ctx.Parse(&req); err != nil {
+		log.Warnf("解析登录请求失败: %v", err)
+		return
+	}
+
+	if err := ctx.BindGate(req.UserID); err != nil {
+		log.Warnf("绑定网关失败 uid=%d: %v", req.UserID, err)
+		_ = ctx.Response(&route.LoginRes{Message: "登录失败"})
+		return
+	}
+
+	log.Infof("玩家登录 uid=%d cid=%d", req.UserID, ctx.CID())
+	_ = ctx.Response(&route.LoginRes{Message: fmt.Sprintf("玩家 %d 登录成功", req.UserID)})
 }
 
 // onConnect 在一条客户端连接建立时触发。
 // 现在只记录日志；将来这里会承接登录与玩家上线逻辑。
 func onConnect(ctx node.Context) {
 	log.Infof("连接建立 cid=%d uid=%d", ctx.CID(), ctx.UID())
+}
+
+// onReconnect 在连接「绑定到一个 uid」时触发。
+// 名字叫 reconnect（断线重连），但 due 在 BindGate 成功后也会发这个事件——
+// 因为「连接获得身份」和「重连恢复身份」在网关看来是同一类状态变化。
+// 所以登录绑定后会走到这里。
+func onReconnect(ctx node.Context) {
+	log.Infof("连接绑定/重连 cid=%d uid=%d", ctx.CID(), ctx.UID())
 }
 
 // onDisconnect 在一条客户端连接断开时触发。

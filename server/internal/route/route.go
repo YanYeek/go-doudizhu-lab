@@ -13,6 +13,10 @@ const (
 	// Greet 问候：客户端发来名字，服务端回一句欢迎语。
 	// 这是项目的第一条路由，用于打通「客户端 → Gate → Node → 响应」整条链路。
 	Greet int32 = 1
+
+	// Login 登录：客户端报上玩家 id，服务端把这条连接绑定到该 uid。
+	// 绑定后网关就知道这条连接属于谁，是玩家系统的起点。
+	Login int32 = 2
 )
 
 // GreetReq 是 Greet 路由的请求体（C2S_Greet）。
@@ -22,5 +26,16 @@ type GreetReq struct {
 
 // GreetRes 是 Greet 路由的响应体（S2C_Greet）。
 type GreetRes struct {
+	Message string `json:"message"`
+}
+
+// LoginReq 是 Login 路由的请求体（C2S_Login）。
+// 现在没有真正的鉴权，客户端直接报上自己的 uid——学习阶段够用。
+type LoginReq struct {
+	UserID int64 `json:"user_id"`
+}
+
+// LoginRes 是 Login 路由的响应体（S2C_Login）。
+type LoginRes struct {
 	Message string `json:"message"`
 }
