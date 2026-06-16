@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>测试与开发命令的划分 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a><a class="nav-link active" href="11-testing-and-dev-commands.html"><span>11 · 测试</span>11 测试与开发命令的划分</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">测试</p>
+        <h1>测试与开发命令的划分</h1>
+        <p>单元 vs 集成、dev.py 的定位，以及测试输出怎么做到既丰富又不淹没。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像验车：先测零件，再试整车</h2>
+          <p>单元测试像出厂前单独检每只轮胎能不能转、漏不漏气，几秒搞定；集成测试像把轮胎、发动机、方向盘都装上车真开一圈，要先把车组装好（起 Redis/etcd），慢但测的是合在一起跑不跑。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>单元测试 vs 集成测试</h2>
+
+<svg viewBox="0 0 760 260" role="img" aria-label="单元测试与集成测试">
+  <rect x="70" y="55" width="260" height="155" rx="20" class="svg-box"/><text x="200" y="92" text-anchor="middle" class="svg-title">单元测试</text><text x="200" y="124" text-anchor="middle" class="svg-small">纯逻辑，不依赖网络</text><text x="200" y="150" text-anchor="middle" class="svg-small">毫秒级 · 随时跑</text><text x="200" y="182" text-anchor="middle" class="svg-small">go test ./...</text>
+  <rect x="430" y="55" width="260" height="155" rx="20" class="svg-accent"/><text x="560" y="92" text-anchor="middle" class="svg-title">集成测试</text><text x="560" y="124" text-anchor="middle" class="svg-small">起 Redis/etcd，端到端</text><text x="560" y="150" text-anchor="middle" class="svg-small">慢 · 需先 deps-up</text><text x="560" y="182" text-anchor="middle" class="svg-small">go test -tags integration</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>开发脚本管编排，包 go 命令只为根目录直接跑</li><li>单元/集成用 build tag 隔离，单元飞快、集成按需</li><li>测试输出成功安静、失败大声，-v 按需调细节</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-dev-py-该管什么-编排-不是包装一切" class="toc-level-2">1. dev.py 该管什么：编排，不是包装一切</a><a href="#2-单元测试-vs-集成测试-比-服务器-客户端-更有用的划分" class="toc-level-2">2. 单元测试 vs 集成测试：比&quot;服务器/客户端&quot;更有用的划分</a><a href="#3-测试输出-成功安静-失败大声" class="toc-level-2">3. 测试输出：&quot;成功安静，失败大声&quot;</a><a href="#4-一个澄清-npm-的-分开脚本-其实是什么" class="toc-level-2">4. 一个澄清：npm 的&quot;分开脚本&quot;其实是什么</a><a href="#5-顺带-这些图该用什么画" class="toc-level-2">5. 顺带：这些图该用什么画</a><a href="#记住四句话" class="toc-level-2">记住四句话</a></aside>
+        <article class="content">
+          <h1 id="测试与开发命令的划分">测试与开发命令的划分</h1>
+<blockquote><p>日期：2026-06-17</p><p></p><p>这篇不是 due 框架知识，而是从几个&quot;测试命令该怎么放&quot;的问题里沉淀出来的工程判断。</p><p>沉淀下来，免得以后又在同样的地方反复纠结。</p></blockquote>
+<h2 id="1-dev-py-该管什么-编排-不是包装一切">1. dev.py 该管什么：编排，不是包装一切</h2>
+<p>一个开发脚本最容易长成&quot;什么都往里塞&quot;的大杂烩。判断该不该塞进去，有条干净的原则：</p>
+<blockquote><p><strong>开发脚本只该管&quot;语言工具链自己做不到的事&quot;。</strong></p></blockquote>
+<p>按这个原则给命令分类：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>命令</th>
+<th>需要编排吗</th>
+<th>谁更该管</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>up</code> / <code>deps-up</code> / <code>server</code> / <code>testclient</code> / <code>status</code></td>
+<td>要（启 Docker、等端口、跨平台）</td>
+<td>dev.py</td>
+</tr>
+<tr>
+<td><code>test-integration</code></td>
+<td>要（得先把依赖拉起来）</td>
+<td>dev.py</td>
+</tr>
+<tr>
+<td><code>test</code>（单元）/ <code>vet</code> / <code>build</code></td>
+<td>不要，就是一行 <code>go test</code>/<code>go vet</code>/<code>go build</code></td>
+<td>Go 自己</td>
+</tr>
+</tbody>
+</table></div>
+<p>那为什么 <code>test</code>/<code>vet</code>/<code>build</code> 还是包了一层进 dev.py？<strong>只有一个正当理由：便利。</strong> 命令行通常停在仓库根目录，包一层就能从根目录直接跑，省去每次 <code>cd server/</code>。 它不是新增功能，只是省一步 <code>cd</code>——想清楚这点，就不会把&quot;包装&quot;当成&quot;必须&quot;。</p>
+<h2 id="2-单元测试-vs-集成测试-比-服务器-客户端-更有用的划分">2. 单元测试 vs 集成测试：比&quot;服务器/客户端&quot;更有用的划分</h2>
+<p>要给&quot;全量测试&quot;分类，第一直觉常是按<strong>组件</strong>分（服务器 / 客户端）。但更有用的是按<strong>层次</strong>分：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>单元测试</th>
+<th>集成测试</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>接不接外部依赖</td>
+<td>不接</td>
+<td>接（Redis / etcd / Gate）</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>毫秒，飞快</td>
+<td>秒级，慢</td>
+</tr>
+<tr>
+<td>跑之前要准备吗</td>
+<td>不用</td>
+<td>要先 <code>deps-up</code></td>
+</tr>
+<tr>
+<td>例子</td>
+<td><code>card_test.go</code></td>
+<td>将来测登录 / 推送的端到端</td>
+</tr>
+</tbody>
+</table></div>
+<p>为什么不按服务器/客户端分？因为<strong>客户端现在根本没有测试套件</strong>，分出一个 <code>test-client</code> 是空壳——这违背 YAGNI。而单元 / 集成是马上就会用到的真实区分。</p>
+<p><strong>隔离手段：build tag。</strong> 集成测试文件顶部加 <code>//go:build integration</code>， 平时 <code>go test ./...</code> 默认不编译它，跑得飞快；要测端到端时才用 <code>go test -tags integration ./...</code>。这样单元测试永远不被慢吞吞的集成测试拖累。</p>
+<h2 id="3-测试输出-成功安静-失败大声">3. 测试输出：&quot;成功安静，失败大声&quot;</h2>
+<p>&quot;信息能不能更丰富，但代码多了会不会看不过来？&quot;——这是个普适的张力，答案是：</p>
+<blockquote><p><strong>默认精简，详细按需打开。</strong></p></blockquote>
+<p>Go 的默认输出就是这么设计的：</p>
+<ul><li><strong>通过的包</strong>：一行 <code>ok ...</code>（成功不啰嗦）</li><li><strong>失败的测试</strong>：自动打出完整细节（失败很大声）</li></ul>
+<p>这个设计<strong>天然抗增长</strong>——不管 5 个包还是 50 个包，每个包通过都只占一行。 真正会爆炸的是 <code>go test -v</code>：它把<strong>每个测试用例</strong>都打出来，那个才随测试数量膨胀。</p>
+<p>所以正确做法不是&quot;把默认调吵&quot;，而是<strong>留一个按需开关</strong>：</p>
+<pre><code class="language-bash">dev.py test        # 精简：一包一行
+dev.py test -v     # 详细：每个用例 + 子测试</code></pre>
+<p>这个思路以后看日志、做监控也通用：信息丰富度是个旋钮，不是常开的喇叭。</p>
+<h2 id="4-一个澄清-npm-的-分开脚本-其实是什么">4. 一个澄清：npm 的&quot;分开脚本&quot;其实是什么</h2>
+<p>&quot;我喜欢 npm 那种 dev / test / build 分开的脚本&quot;——这里有个常见误解。</p>
+<p><code>npm run dev</code> / <code>npm test</code> / <code>npm run build</code> <strong>不是三个独立文件</strong>，而是 <strong>一个 <code>package.json</code> 里的三个命名条目</strong>，都归 <code>npm</code> 这一个工具管。</p>
+<p><code>python dev.py test</code> / <code>dev.py up</code> / <code>dev.py build</code> 是一模一样的结构： <strong>一个工具、多个命名子命令</strong>。所以 dev.py 已经就是 npm 模型了。真把它拆成三个 独立 <code>.py</code>，反而要把&quot;等端口、启 Docker&quot;的共享逻辑复制三份，更糟。</p>
+<h2 id="5-顺带-这些图该用什么画">5. 顺带：这些图该用什么画</h2>
+<p>做这些说明图时，别用 AI 栅格生图，用代码生成的 SVG（本仓库 <code>build_learning_html.py</code> 就是这么干的）。原因：结构图 / 流程图 / 对照图全靠<strong>精确的文字标签</strong>，而 AI 栅格 生图恰恰在带标签的技术图上会文字模糊、标签错乱。SVG 文字精确、能进 git、能改、 缩放不糊。AI 生图擅长的是纯插画式比喻，对&quot;讲清结构&quot;帮助不大。</p>
+<h2 id="记住四句话">记住四句话</h2>
+<ol><li>开发脚本管编排，不是包装一切；包 go 命令只为从根目录直接跑，是便利不是功能。</li><li>测试按&quot;单元 / 集成&quot;分比按&quot;服务器 / 客户端&quot;分更有用，用 build tag 隔离。</li><li>测试输出&quot;成功安静、失败大声&quot;；丰富度用 <code>-v</code> 按需打开，别设成默认。</li><li>技术结构图用代码生成的 SVG，比 AI 栅格生图更准、更可维护。</li></ol>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

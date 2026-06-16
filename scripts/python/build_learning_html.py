@@ -154,6 +154,17 @@ PAGES: tuple[PageSpec, ...] = (
         "push",
         ("Response 沿原请求返回", "Push 依赖 uid 绑定反向找人", "Multicast 就是房间广播雏形"),
     ),
+    PageSpec(
+        "11-testing-and-dev-commands",
+        "测试",
+        "测试与开发命令的划分",
+        "单元 vs 集成、dev.py 的定位，以及测试输出怎么做到既丰富又不淹没。",
+        "像验车：先测零件，再试整车",
+        "单元测试像出厂前单独检每只轮胎能不能转、漏不漏气，几秒搞定；集成测试像把轮胎、发动机、方向盘都装上车真开一圈，要先把车组装好（起 Redis/etcd），慢但测的是合在一起跑不跑。",
+        "单元测试 vs 集成测试",
+        "testing",
+        ("开发脚本管编排，包 go 命令只为根目录直接跑", "单元/集成用 build tag 隔离，单元飞快、集成按需", "测试输出成功安静、失败大声，-v 按需调细节"),
+    ),
 )
 
 
@@ -396,6 +407,12 @@ def diagram(kind: str) -> str:
 <svg viewBox="0 0 760 260" role="img" aria-label="Route 和 Event">
   <rect x="70" y="55" width="260" height="140" rx="20" class="svg-box"/><text x="200" y="92" text-anchor="middle" class="svg-title">Route</text><text x="200" y="126" text-anchor="middle" class="svg-small">客户端主动发消息</text><text x="200" y="156" text-anchor="middle" class="svg-small">Greet / Login / PlayCard</text>
   <rect x="430" y="55" width="260" height="140" rx="20" class="svg-accent"/><text x="560" y="92" text-anchor="middle" class="svg-title">Event</text><text x="560" y="126" text-anchor="middle" class="svg-small">框架自动触发</text><text x="560" y="156" text-anchor="middle" class="svg-small">connect / disconnect</text>
+</svg>"""
+    if kind == "testing":
+        return """
+<svg viewBox="0 0 760 260" role="img" aria-label="单元测试与集成测试">
+  <rect x="70" y="55" width="260" height="155" rx="20" class="svg-box"/><text x="200" y="92" text-anchor="middle" class="svg-title">单元测试</text><text x="200" y="124" text-anchor="middle" class="svg-small">纯逻辑，不依赖网络</text><text x="200" y="150" text-anchor="middle" class="svg-small">毫秒级 · 随时跑</text><text x="200" y="182" text-anchor="middle" class="svg-small">go test ./...</text>
+  <rect x="430" y="55" width="260" height="155" rx="20" class="svg-accent"/><text x="560" y="92" text-anchor="middle" class="svg-title">集成测试</text><text x="560" y="124" text-anchor="middle" class="svg-small">起 Redis/etcd，端到端</text><text x="560" y="150" text-anchor="middle" class="svg-small">慢 · 需先 deps-up</text><text x="560" y="182" text-anchor="middle" class="svg-small">go test -tags integration</text>
 </svg>"""
     if kind == "binding":
         return flow_svg(["cid=1 匿名", "Login 路由", "BindGate(uid)", "uid=1001 已识别"], "连接从临时号码升级为玩家身份")
