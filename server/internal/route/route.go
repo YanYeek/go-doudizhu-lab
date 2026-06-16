@@ -17,6 +17,10 @@ const (
 	// Login 登录：客户端报上玩家 id，服务端把这条连接绑定到该 uid。
 	// 绑定后网关就知道这条连接属于谁，是玩家系统的起点。
 	Login int32 = 2
+
+	// Notify 通知：服务端主动推给客户端的消息（S2C，没有对应的客户端请求）。
+	// 用来验证「绑定后服务端能按 uid 反向找到玩家并主动推送」。
+	Notify int32 = 3
 )
 
 // GreetReq 是 Greet 路由的请求体（C2S_Greet）。
@@ -38,4 +42,9 @@ type LoginReq struct {
 // LoginRes 是 Login 路由的响应体（S2C_Login）。
 type LoginRes struct {
 	Message string `json:"message"`
+}
+
+// NotifyPush 是 Notify 的推送体（S2C_Notify）。由服务端主动发起，没有请求体。
+type NotifyPush struct {
+	Text string `json:"text"`
 }

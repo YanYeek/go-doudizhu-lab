@@ -13,6 +13,7 @@ import (
 	"github.com/dobyte/due/v2/cluster"
 	"github.com/dobyte/due/v2/cluster/node"
 	"github.com/dobyte/due/v2/log"
+	"github.com/dobyte/due/v2/session"
 
 	"github.com/YanYeek/go-doudizhu-lab/server/internal/route"
 )
@@ -48,6 +49,27 @@ func onLogin(ctx node.Context) {
 
 	log.Infof("玩家登录 uid=%d cid=%d", req.UserID, ctx.CID())
 	_ = ctx.Response(&route.LoginRes{Message: fmt.Sprintf("玩家 %d 登录成功", req.UserID)})
+
+	// 绑定成功后，服务端主动按 uid 推一条通知。
+	// 这和上面的 Response 本质不同：Response 是「回复客户端的请求」，
+	// Push 是「服务端主动找到某个玩家发消息」——而能按 uid 找到连接，
+	// 正是因为前面 BindGate 建立了 uid ↔ 连接 的对应。房间广播就是它的放大版。
+	pushWelcome(ctx, req.UserID)
+}
+
+// pushWelcome 按 uid 主动给玩家推一条欢迎通知。
+func pushWelcome(ctx node.Context, uid int64) {
+	err := ctx.Proxy().Push(ctx.Context(), &cluster.PushArgs{
+		Kind:    session.User, // 按「用户(uid)」寻址，而不是「连接(cid)」
+		Target:  uid,
+		Message: &cluster.Message{
+			Route: route.Notify,
+			Data:  &route.NotifyPush{Text: "服务端主动推送：欢迎上线，已准备好开始游戏"},
+		},
+	})
+	if err != nil {
+		log.Warnf("推送通知失败 uid=%d: %v", uid, err)
+	}
 }
 
 // onConnect 在一条客户端连接建立时触发。

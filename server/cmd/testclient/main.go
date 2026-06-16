@@ -28,6 +28,7 @@ func main() {
 	// 每条响应路由各用一个 channel 把结果交回主流程。
 	loginCh := make(chan string, 1)
 	greetCh := make(chan string, 1)
+	notifyCh := make(chan string, 1)
 	cli.Proxy().AddRouteHandler(route.Login, func(ctx *client.Context) {
 		var res route.LoginRes
 		if err := ctx.Parse(&res); err != nil {
@@ -35,6 +36,15 @@ func main() {
 			return
 		}
 		loginCh <- res.Message
+	})
+	// Notify 没有对应的请求，是服务端登录后主动推过来的。
+	cli.Proxy().AddRouteHandler(route.Notify, func(ctx *client.Context) {
+		var p route.NotifyPush
+		if err := ctx.Parse(&p); err != nil {
+			log.Errorf("解析通知失败: %v", err)
+			return
+		}
+		notifyCh <- p.Text
 	})
 	cli.Proxy().AddRouteHandler(route.Greet, func(ctx *client.Context) {
 		var res route.GreetRes
@@ -62,6 +72,9 @@ func main() {
 	// 2) 登录后再发一条普通请求，验证已登录的连接照常工作。
 	push(conn, 2, route.Greet, &route.GreetReq{Name: "测试客户端"})
 	log.Infof("问候响应: %s", await(greetCh))
+
+	// 3) 收取服务端在登录后主动推来的通知（没有对应请求）。
+	log.Infof("服务端主动推送: %s", await(notifyCh))
 }
 
 // push 发送一条消息，失败直接终止（测试客户端无需重试）。
