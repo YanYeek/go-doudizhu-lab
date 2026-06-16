@@ -788,16 +788,20 @@ svg { width: 100%; height: auto; }
 def write_files() -> None:
     LEARNING_DIR.mkdir(parents=True, exist_ok=True)
     STYLE_PATH.write_text(CSS, encoding="utf-8", newline="\n")
-    (LEARNING_DIR / "index.html").write_text(index_html(), encoding="utf-8", newline="\n")
+    (LEARNING_DIR / "index.html").write_text(clean_output(index_html()), encoding="utf-8", newline="\n")
     for spec in PAGES:
         source = md_source_path(spec.slug)
         markdown = source.read_text(encoding="utf-8")
         content, headings = markdown_to_html(markdown)
         (LEARNING_DIR / f"{spec.slug}.html").write_text(
-            page_html(spec, content, headings),
+            clean_output(page_html(spec, content, headings)),
             encoding="utf-8",
             newline="\n",
         )
+
+
+def clean_output(content: str) -> str:
+    return "\n".join(line.rstrip() for line in content.splitlines()) + "\n"
 
 
 if __name__ == "__main__":
