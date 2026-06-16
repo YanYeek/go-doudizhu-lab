@@ -185,28 +185,35 @@ def up() -> None:
     server()
 
 
-def test() -> None:
+def test_integration() -> None:
+    # 集成测试：测 due 路由、登录、推送等端到端行为，需要真实依赖先就绪。
+    # 这类测试文件顶部加 `//go:build integration`，用 -tags integration 才会编译运行。
+    # 单元测试不需要任何编排，直接 `go test ./...` 即可，所以不放进本脚本。
     require_command("go")
-    run(["go", "test", "./..."])
-
-
-def vet() -> None:
-    require_command("go")
-    run(["go", "vet", "./..."])
-
-
-def build() -> None:
-    require_command("go")
-    with tempfile.TemporaryDirectory(prefix="doudizhu-build-") as directory:
-        output = Path(directory) / "server"
-        run(["go", "build", "-o", str(output), "./cmd/server"])
+    missing = [
+        name
+        for name, port in (("redis", SERVICES["redis"]), ("etcd", SERVICES["etcd"]))
+        if not port_is_open(port)
+    ]
+    if missing:
+        raise DevCommandError(
+            "集成测试需要 Redis 与 etcd 先就绪。请先运行 "
+            "`python scripts/python/dev.py deps-up`（或 `up`）。"
+            f"当前未就绪：{', '.join(missing)}。"
+        )
+    print("\n运行集成测试（带 integration build tag 的测试）。")
+    run(["go", "test", "-tags", "integration", "./..."])
 
 
 def check() -> None:
-    test()
-    vet()
-    build()
-    print("\n测试、静态检查与构建全部通过。")
+    # 提交前自检：单元测试 + 静态检查 + 构建，按顺序跑、有错即停。
+    # 日常单独跑某一项时直接用 go：go test ./...、go vet ./...、go build ./cmd/server。
+    require_command("go")
+    run(["go", "test", "./..."])
+    run(["go", "vet", "./..."])
+    with tempfile.TemporaryDirectory(prefix="doudizhu-build-") as directory:
+        run(["go", "build", "-o", str(Path(directory) / "server"), "./cmd/server"])
+    print("\n单元测试、静态检查与构建全部通过。")
 
 
 def status() -> None:
@@ -250,10 +257,8 @@ def create_parser() -> argparse.ArgumentParser:
         "deps-up": "只启动 Redis 与 etcd",
         "deps-down": "停止并删除 Redis 与 etcd 容器",
         "status": "查看依赖与 Gate 端口状态",
-        "test": "运行全部 Go 测试",
-        "vet": "运行 Go 静态检查",
-        "build": "构建服务器",
-        "check": "依次运行测试、静态检查与构建",
+        "test-integration": "运行集成测试（需先 deps-up，带 integration build tag）",
+        "check": "提交前自检：单元测试 + 静态检查 + 构建",
         "doctor": "检查本机开发环境",
     }
 
@@ -272,9 +277,7 @@ def main() -> int:
         "deps-up": deps_up,
         "deps-down": deps_down,
         "status": status,
-        "test": test,
-        "vet": vet,
-        "build": build,
+        "test-integration": test_integration,
         "check": check,
         "doctor": doctor,
     }
