@@ -185,10 +185,20 @@ def up() -> None:
     server()
 
 
+# 下面 test / vet / build 是对 go 命令的便捷包装。它们看着只是一行 go，但价值在于
+# 「从仓库根目录就能跑」——脚本内部已切到 server/，省去每次手动 cd server/ 再敲 go。
+# 这是有意保留的，不要因为「只是一行 go 命令」就删掉。
+def test() -> None:
+    # 单元测试：纯逻辑，不依赖 Redis/etcd/Gate，毫秒级跑完。
+    # 集成测试文件用 `//go:build integration` 标记隔离，默认不参与，
+    # 所以这里 go test ./... 只会跑单元测试。
+    require_command("go")
+    run(["go", "test", "./..."])
+
+
 def test_integration() -> None:
     # 集成测试：测 due 路由、登录、推送等端到端行为，需要真实依赖先就绪。
     # 这类测试文件顶部加 `//go:build integration`，用 -tags integration 才会编译运行。
-    # 单元测试不需要任何编排，直接 `go test ./...` 即可，所以不放进本脚本。
     require_command("go")
     missing = [
         name
@@ -205,14 +215,22 @@ def test_integration() -> None:
     run(["go", "test", "-tags", "integration", "./..."])
 
 
-def check() -> None:
-    # 提交前自检：单元测试 + 静态检查 + 构建，按顺序跑、有错即停。
-    # 日常单独跑某一项时直接用 go：go test ./...、go vet ./...、go build ./cmd/server。
+def vet() -> None:
     require_command("go")
-    run(["go", "test", "./..."])
     run(["go", "vet", "./..."])
+
+
+def build() -> None:
+    require_command("go")
     with tempfile.TemporaryDirectory(prefix="doudizhu-build-") as directory:
-        run(["go", "build", "-o", str(Path(directory) / "server"), "./cmd/server"])
+        output = Path(directory) / "server"
+        run(["go", "build", "-o", str(output), "./cmd/server"])
+
+
+def check() -> None:
+    test()
+    vet()
+    build()
     print("\n单元测试、静态检查与构建全部通过。")
 
 
@@ -257,7 +275,10 @@ def create_parser() -> argparse.ArgumentParser:
         "deps-up": "只启动 Redis 与 etcd",
         "deps-down": "停止并删除 Redis 与 etcd 容器",
         "status": "查看依赖与 Gate 端口状态",
+        "test": "运行单元测试（快，不依赖 Redis/etcd）",
         "test-integration": "运行集成测试（需先 deps-up，带 integration build tag）",
+        "vet": "运行 Go 静态检查",
+        "build": "构建服务器",
         "check": "提交前自检：单元测试 + 静态检查 + 构建",
         "doctor": "检查本机开发环境",
     }
@@ -277,7 +298,10 @@ def main() -> int:
         "deps-up": deps_up,
         "deps-down": deps_down,
         "status": status,
+        "test": test,
         "test-integration": test_integration,
+        "vet": vet,
+        "build": build,
         "check": check,
         "doctor": doctor,
     }

@@ -38,20 +38,16 @@ python scripts/python/dev.py deps-down
 | `deps-up` | 只启动 Redis 与 etcd |
 | `deps-down` | 停止并删除 Redis 与 etcd 容器 |
 | `status` | 查看依赖与 Gate 端口状态 |
+| `test` | 运行单元测试（快，不依赖 Redis/etcd）|
 | `test-integration` | 运行集成测试（需先 `deps-up`，带 `integration` build tag）|
+| `vet` | 运行 Go 静态检查 |
+| `build` | 构建服务器 |
 | `check` | 提交前自检：单元测试 + 静态检查 + 构建 |
 | `doctor` | 检查 Python、Go、Docker 与端口状态 |
 
-本脚本只负责"Go 工具链做不到的编排"（起 Docker、等端口、跑服务、集成测试）。
-纯 Go 任务直接用 go 命令，不再包一层（在 `server/` 目录下）：
-
-```bash
-go test ./...              # 单元测试（快，不依赖 Redis/etcd）
-go vet ./...               # 静态检查
-go build ./cmd/server      # 构建
-```
-
-集成测试用 `dev.py test-integration`，因为它需要先把 Redis/etcd 拉起来。
+`test` / `vet` / `build` 看着只是一行 go 命令，包成子命令的好处是**从仓库根目录就能跑**，
+省去每次 `cd server/`。`test` 是不依赖网络的单元测试；`test-integration` 需要先
+`deps-up` 起 Redis/etcd，按 `integration` build tag 隔离端到端测试。
 
 `up` 会让服务器保持在前台，方便查看日志。按 `Ctrl+C` 会停止 Gate，但保留
 Redis 与 etcd，便于继续开发；当天开发结束时再执行 `deps-down`。
