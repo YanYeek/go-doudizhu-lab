@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第一条路由与编解码器 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link active" href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">due 03</p>
+        <h1>第一条路由与编解码器</h1>
+        <p>跑通客户端 → Gate → Node → 响应，并理解 json/proto 必须一致。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像两个人约定用同一种语言</h2>
+          <p>快递车 Gate 只负责搬箱子，不会拆开看信件。真正写信和读信的是客户端与 Node，所以双方必须约好是中文、英文还是 protobuf。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>请求响应链路与 codec 边界</h2>
+          <svg viewBox="0 0 760 250" role="img" aria-label="分层结构图"><rect x="55" y="60" width="190" height="100" rx="18" class="svg-box"/><text x="150" y="98" text-anchor="middle" class="svg-title">客户端</text><text x="150" y="130" text-anchor="middle" class="svg-small">编码 json</text><path d="M248 110 H282" class="svg-arrow"/><rect x="285" y="60" width="190" height="100" rx="18" class="svg-accent"/><text x="380" y="98" text-anchor="middle" class="svg-title">Gate</text><text x="380" y="130" text-anchor="middle" class="svg-small">只搬运字节</text><path d="M478 110 H512" class="svg-arrow"/><rect x="515" y="60" width="190" height="100" rx="18" class="svg-box"/><text x="610" y="98" text-anchor="middle" class="svg-title">Node</text><text x="610" y="130" text-anchor="middle" class="svg-small">解码 json</text></svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>Route 是请求入口</li><li>Gate 只转发字节</li><li>两端 codec 不一致就读不懂</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-这一步到底加了什么" class="toc-level-2">1. 这一步到底加了什么</a><a href="#2-一条路由是怎么处理的" class="toc-level-2">2. 一条路由是怎么处理的</a><a href="#3-真实踩到的坑-proto-vs-json-编解码器" class="toc-level-2">3. 真实踩到的坑：proto vs json 编解码器</a><a href="#4-这个坑背后的原理-本课最值得记的一点" class="toc-level-2">4. 这个坑背后的原理（本课最值得记的一点）</a><a href="#5-怎么自己复跑" class="toc-level-2">5. 怎么自己复跑</a><a href="#6-本课记住三句话" class="toc-level-2">6. 本课记住三句话</a><a href="#7-下一小步-保持小" class="toc-level-2">7. 下一小步（保持小）</a></aside>
+        <article class="content">
+          <h1 id="due-学习-03-第一条消息路由-与一个编解码器的坑">due 学习 03：第一条消息路由，与一个编解码器的坑</h1>
+<blockquote><p>日期：2026-06-13</p><p></p><p>本课目标：让「客户端 → Gate → Node → 响应」整条链路第一次真正跑通，</p><p>并理解为什么两端的编解码器必须一致。前两课的 Container / Gate 概念不再重复。</p></blockquote>
+<h2 id="1-这一步到底加了什么">1. 这一步到底加了什么</h2>
+<p>上一课 Gate 能接受连接，但没有 Node，消息无处可去。这一课补上 Node 和 第一条路由，链路闭合：</p>
+<pre><code class="language-text">Go 测试客户端 ──ws──▶ Gate ──转发──▶ Node(路由1: Greet) ──Response──▶ 客户端</code></pre>
+<p>落地为四小块（都很薄，刻意保持最小）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>文件</th>
+<th>作用</th>
+<th>一句话</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>internal/route/route.go</code></td>
+<td>协议定义</td>
+<td>路由号 <code>Greet=1</code> + 请求/响应结构体</td>
+</tr>
+<tr>
+<td><code>internal/greet/greet.go</code></td>
+<td>业务处理器</td>
+<td>解析名字，回一句欢迎语</td>
+</tr>
+<tr>
+<td><code>cmd/server/main.go</code></td>
+<td>组装</td>
+<td>在原 Gate 旁边加一个 Node，注册 Greet 路由</td>
+</tr>
+<tr>
+<td><code>cmd/testclient/main.go</code></td>
+<td>测试客户端</td>
+<td>连 Gate、发一条 Greet、打印响应后退出</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-一条路由是怎么处理的">2. 一条路由是怎么处理的</h2>
+<p>Node 的处理器签名是 <code>func(ctx node.Context)</code>。<code>ctx</code> 装着这条消息的全部上下文 （哪条连接、序列号、路由号）。两个动作就够了：</p>
+<pre><code class="language-go">func handle(ctx node.Context) {
+    var req route.GreetReq
+    ctx.Parse(&amp;req)                 // 字节 → 请求结构体
+    ctx.Response(&amp;route.GreetRes{   // 响应结构体 → 字节，沿原路由号发回
+        Message: &quot;你好，&quot; + req.Name + &quot;，欢迎来到斗地主服务器&quot;,
+    })
+}</code></pre>
+<p>服务端的 <code>Response</code> 会用<strong>同一个路由号</strong>把响应发回，所以测试客户端也注册 <code>AddRouteHandler(route.Greet, ...)</code> 来接收它。请求和响应共用路由号，这是 due 的 约定。</p>
+<h2 id="3-真实踩到的坑-proto-vs-json-编解码器">3. 真实踩到的坑：proto vs json 编解码器</h2>
+<p>第一次跑测试客户端，直接报错：</p>
+<pre><code class="language-text">发送请求失败: can&#x27;t marshal a value that not implements proto.Buffer interface</code></pre>
+<p><strong>线索其实在服务端启动横幅里就给了</strong>：</p>
+<pre><code class="language-text">| Node   | Codec: proto |
+| Client | Codec: proto |</code></pre>
+<p>due 默认用 <strong>proto</strong> 编解码器，而它要求消息体实现 protobuf 接口。我们的 <code>GreetReq</code> 只是个带 json tag 的普通结构体，proto 编不了 → 报错。</p>
+<p>修复：在配置里把两端都改成 json（结构体本来就是 json tag）：</p>
+<pre><code class="language-toml">[cluster.node]
+codec = &quot;json&quot;
+
+[cluster.client]
+codec = &quot;json&quot;</code></pre>
+<h2 id="4-这个坑背后的原理-本课最值得记的一点">4. 这个坑背后的原理（本课最值得记的一点）</h2>
+<p>为什么改一个地方不够、必须两端都改？因为：</p>
+<pre><code class="language-text">客户端  ──编码──▶  Gate（只转发字节，从不拆开看）──▶  Node  ──解码
+   ↑ 用自己的 codec 编                                    ↑ 用自己的 codec 解</code></pre>
+<p><strong>Gate 是编解码器无关的</strong>——它只搬运字节，不关心里面是什么。真正做编码/解码的 是两个端点（客户端和 Node）。所以两端的 codec 必须说同一种&quot;语言&quot;，否则一边写的 另一边读不懂。这和 HTTP 里 <code>Content-Type</code> 要前后端一致是同一个道理。</p>
+<p>选 json 而不是 proto，是因为本项目第一阶段用「json + 手写结构体」起步，最直观； 等协议稳定、追求性能时再考虑换 proto（那时要写 <code>.proto</code> 并生成代码）。</p>
+<h2 id="5-怎么自己复跑">5. 怎么自己复跑</h2>
+<pre><code class="language-bash">python scripts/python/dev.py up   # 起 Redis/etcd + 前台 Gate+Node
+go run ./cmd/testclient           # 另一个终端
+# 期望输出：链路打通，收到服务端响应: 你好，测试客户端，欢迎来到斗地主服务器</code></pre>
+<h2 id="6-本课记住三句话">6. 本课记住三句话</h2>
+<ol><li>Node 处理器只做两件事：<code>Parse</code> 收请求、<code>Response</code> 回响应，共用路由号。</li><li>Gate 只转发字节，不做编解码；编解码发生在客户端和 Node 两个端点。</li><li>两端 codec 必须一致——这次的报错就是 proto/json 不一致造成的。</li></ol>
+<h2 id="7-下一小步-保持小">7. 下一小步（保持小）</h2>
+<p>链路通了，但还没有&quot;玩家&quot;概念。下一步可以只做一件事：让客户端先发一条 登录/绑定消息，把连接和一个 uid 绑定起来（<code>ctx.BindNode</code>），为之后的房间和 对局做准备——仍然是一条路由的量级，不扩模块。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

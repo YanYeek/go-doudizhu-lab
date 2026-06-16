@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>登录与连接绑定 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link active" href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">due 05</p>
+        <h1>登录与连接绑定</h1>
+        <p>用 BindGate 把匿名连接绑定成可识别的玩家 uid。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像给访客发工牌</h2>
+          <p>刚进楼的人只有临时门禁记录 cid；登录后领到工牌 uid，之后保安、会议室和通知系统都能知道这个人是谁。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>cid 到 uid 的身份升级</h2>
+          <svg viewBox="0 0 760 230" role="img" aria-label="流程图"><circle cx="70.0" cy="105" r="36" class="svg-node"/><text x="70.0" y="111" text-anchor="middle" class="svg-small">cid=1 匿名</text><path d="M108.0 105 H238.66666666666663" class="svg-arrow"/><circle cx="276.66666666666663" cy="105" r="36" class="svg-node"/><text x="276.66666666666663" y="111" text-anchor="middle" class="svg-small">Login 路由</text><path d="M314.66666666666663 105 H445.33333333333326" class="svg-arrow"/><circle cx="483.3333333333333" cy="105" r="36" class="svg-node"/><text x="483.3333333333333" y="111" text-anchor="middle" class="svg-small">BindGate(uid)</text><path d="M521.3333333333333 105 H652.0" class="svg-arrow"/><circle cx="690.0" cy="105" r="36" class="svg-node"/><text x="690.0" y="111" text-anchor="middle" class="svg-small">uid=1001 已识别</text><text x="380" y="178" text-anchor="middle" class="svg-label">连接从临时号码升级为玩家身份</text></svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>登录路由负责绑定身份</li><li>断开日志能验证 uid 是否生效</li><li>BindGate 会触发 Reconnect</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-这一步加了什么" class="toc-level-2">1. 这一步加了什么</a><a href="#2-核心动作-bindgate" class="toc-level-2">2. 核心动作：BindGate</a><a href="#3-验证-让上一课的事件日志替我们说话" class="toc-level-2">3. 验证：让上一课的事件日志替我们说话</a><a href="#4-一个意外的小知识-bindgate-会触发-reconnect-事件" class="toc-level-2">4. 一个意外的小知识：BindGate 会触发 reconnect 事件</a><a href="#5-现在的连接生命周期全景" class="toc-level-2">5. 现在的连接生命周期全景</a><a href="#6-本课记住三句话" class="toc-level-2">6. 本课记住三句话</a><a href="#7-下一小步-保持小" class="toc-level-2">7. 下一小步（保持小）</a></aside>
+        <article class="content">
+          <h1 id="due-学习-05-登录-与连接到玩家的绑定">due 学习 05：登录，与连接到玩家的绑定</h1>
+<blockquote><p>日期：2026-06-14</p><p></p><p>本课目标：加一条登录路由，把「一条连接」绑定到「一个玩家 uid」，</p><p>让服务端从&quot;匿名连接&quot;升级到&quot;认得玩家&quot;。这是玩家系统的第一块地基。</p></blockquote>
+<h2 id="1-这一步加了什么">1. 这一步加了什么</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>文件</th>
+<th>改动</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>internal/route</code></td>
+<td>新增 <code>Login=2</code> 路由 + <code>LoginReq{UserID}</code> / <code>LoginRes</code></td>
+</tr>
+<tr>
+<td><code>internal/session</code></td>
+<td>新增 <code>onLogin</code>（绑定 uid）+ <code>onReconnect</code> 事件处理器</td>
+</tr>
+<tr>
+<td><code>cmd/testclient</code></td>
+<td>先登录、再问候，演示真实客户端的先后顺序</td>
+</tr>
+</tbody>
+</table></div>
+<p>没有新增模块——登录天然属于 <code>session</code>（连接/玩家这一层），和上一课的 connect/disconnect 事件住在一起。</p>
+<h2 id="2-核心动作-bindgate">2. 核心动作：BindGate</h2>
+<p>登录处理器只做一件关键的事：</p>
+<pre><code class="language-go">func onLogin(ctx node.Context) {
+    var req route.LoginReq
+    ctx.Parse(&amp;req)
+    ctx.BindGate(req.UserID)   // ← 把当前连接绑定到这个 uid
+    ctx.Response(&amp;route.LoginRes{Message: &quot;登录成功&quot;})
+}</code></pre>
+<p><code>BindGate</code> 让<strong>网关</strong>在&quot;连接（cid）&quot;和&quot;玩家（uid）&quot;之间建立对应关系。绑定前， 网关只知道&quot;有一条连接&quot;；绑定后，它知道&quot;这条连接是玩家 1001&quot;。</p>
+<blockquote><p>现在没有真正的鉴权——客户端直接报上 uid。学习阶段先打通机制，鉴权是后话。</p></blockquote>
+<h2 id="3-验证-让上一课的事件日志替我们说话">3. 验证：让上一课的事件日志替我们说话</h2>
+<p>绑定有没有生效，不用猜——上一课注册的 <code>session</code> 事件处理器会把整条连接的 一生打出来。跑一次测试客户端，服务端日志是：</p>
+<pre><code class="language-text">连接建立      cid=1 uid=0       ← 刚连上，匿名
+玩家登录      uid=1001 cid=1     ← Login 路由，BindGate
+连接绑定/重连  cid=1 uid=1001     ← 见第 4 节
+连接断开      cid=1 uid=1001     ← 关键：断开时 uid 已是 1001</code></pre>
+<p>最后一行是铁证：<strong>绑定前断开会是 <code>uid=0</code>，绑定后断开变成 <code>uid=1001</code></strong>。 连接终于&quot;带着身份&quot;离开，掉线清理时就能知道是哪个玩家走了。</p>
+<h2 id="4-一个意外的小知识-bindgate-会触发-reconnect-事件">4. 一个意外的小知识：BindGate 会触发 reconnect 事件</h2>
+<p>第一次跑完，<code>not found event</code> 警告没有完全消失，还剩一条：</p>
+<pre><code class="language-text">trigger event failed, uid: 1001, event: reconnect, err: not found event</code></pre>
+<p>查 due 源码（<code>cluster/gate/proxy.go</code>）发现：<code>BindGate</code> 成功后，网关会<strong>额外触发 一个 <code>Reconnect</code> 事件</strong>。原因是——在网关眼里，&quot;连接获得身份&quot;和&quot;断线重连恢复 身份&quot;是同一类状态变化，都用 <code>Reconnect</code> 表示。</p>
+<p>我们没注册 <code>Reconnect</code> 处理器，于是又是一条&quot;没人接这个事件&quot;的警告（正是上一课 讲过的机制）。补上 <code>onReconnect</code> 后，警告归零：</p>
+<pre><code class="language-go">proxy.AddEventHandler(cluster.Reconnect, onReconnect)</code></pre>
+<p>这也印证了上一课的规律：<strong>每出现一类新事件，就要么处理它、要么容忍那条 WARN。</strong></p>
+<h2 id="5-现在的连接生命周期全景">5. 现在的连接生命周期全景</h2>
+<pre><code class="language-text">connect    →  uid=0    （匿名连接建立）
+  └─ 客户端发 Login 路由
+reconnect  →  uid=1001 （BindGate 绑定身份后触发）
+  └─ 客户端正常收发消息（已登录）
+disconnect →  uid=1001 （带着身份断开）</code></pre>
+<h2 id="6-本课记住三句话">6. 本课记住三句话</h2>
+<ol><li>登录 = 一条路由里调用 <code>BindGate(uid)</code>，把连接和玩家对应起来。</li><li>绑定是否生效，看断开事件的 uid 从 0 变成真实玩家号即可确认。</li><li><code>BindGate</code> 会顺带触发 <code>Reconnect</code> 事件——记得也注册它，否则又多一条 WARN。</li></ol>
+<h2 id="7-下一小步-保持小">7. 下一小步（保持小）</h2>
+<p>现在网关知道&quot;这条连接是哪个玩家&quot;，但玩家之间还彼此孤立。下一步可以只做一件事： <strong>给同一个玩家做一次服务端主动推送</strong>（用 uid 找到连接、Push 一条消息）， 体会&quot;绑定之后服务端能反过来找到玩家&quot;——这是将来房间广播、通知出牌的基础。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

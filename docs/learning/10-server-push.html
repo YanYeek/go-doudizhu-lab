@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>服务端主动推送 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link active" href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">due 06</p>
+        <h1>服务端主动推送</h1>
+        <p>让服务端按 uid 主动给玩家发消息，为房间广播打基础。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像外卖员主动敲门</h2>
+          <p>Response 是你打电话问客服，客服回答你；Push 是外卖到了，骑手不用等你再问，直接按门牌号敲门通知。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>从回复请求到主动通知</h2>
+          
+<svg viewBox="0 0 760 260" role="img" aria-label="Response 和 Push">
+  <path d="M110 90 H640" class="svg-arrow"/><text x="380" y="72" text-anchor="middle" class="svg-small">Request</text>
+  <path d="M640 125 H110" class="svg-arrow"/><text x="380" y="153" text-anchor="middle" class="svg-small">Response：沿原请求返回</text>
+  <path d="M640 205 H110" class="svg-arrow accent-arrow"/><text x="380" y="230" text-anchor="middle" class="svg-small">Push：服务端按 uid 主动通知</text>
+  <circle cx="100" cy="110" r="42" class="svg-node"/><text x="100" y="116" text-anchor="middle" class="svg-title">客户端</text>
+  <circle cx="650" cy="110" r="42" class="svg-node"/><text x="650" y="116" text-anchor="middle" class="svg-title">服务端</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>Response 沿原请求返回</li><li>Push 依赖 uid 绑定反向找人</li><li>Multicast 就是房间广播雏形</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-response-与-push-的本质区别" class="toc-level-2">1. Response 与 Push 的本质区别</a><a href="#2-这一步加了什么" class="toc-level-2">2. 这一步加了什么</a><a href="#3-关键代码-按-uid-推送" class="toc-level-2">3. 关键代码：按 uid 推送</a><a href="#4-验证-发-2-条-收-3-条" class="toc-level-2">4. 验证：发 2 条，收 3 条</a><a href="#5-通往房间广播" class="toc-level-2">5. 通往房间广播</a><a href="#6-本课记住三句话" class="toc-level-2">6. 本课记住三句话</a><a href="#7-下一小步-保持小" class="toc-level-2">7. 下一小步（保持小）</a></aside>
+        <article class="content">
+          <h1 id="due-学习-06-服务端主动推送-按-uid-找到玩家">due 学习 06：服务端主动推送（按 uid 找到玩家）</h1>
+<blockquote><p>日期：2026-06-16</p><p></p><p>本课目标：让服务端<strong>主动</strong>给某个玩家发一条消息——不是回复请求，而是服务端</p><p>自己发起。这是房间广播、&quot;轮到你出牌&quot;通知的基础。</p></blockquote>
+<h2 id="1-response-与-push-的本质区别">1. Response 与 Push 的本质区别</h2>
+<p>到上一课为止，所有消息都是&quot;客户端问、服务端答&quot;：</p>
+<pre><code class="language-text">客户端 ──请求──▶ 服务端 ──Response──▶ 客户端   （被动回复，同一路由+seq）</code></pre>
+<p>这一课多了一条反方向、无请求触发的通道：</p>
+<pre><code class="language-text">服务端 ──Push(按 uid 寻址)──▶ 客户端           （主动发起，没有对应请求）</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th><code>ctx.Response(msg)</code></th>
+<th><code>ctx.Proxy().Push(...)</code></th>
+</tr></thead>
+<tbody>
+<tr>
+<td>谁发起</td>
+<td>客户端的请求触发</td>
+<td>服务端自己</td>
+</tr>
+<tr>
+<td>寻址方式</td>
+<td>沿原连接、原 seq 回去</td>
+<td>按 <strong>uid</strong> 或 cid 主动找</td>
+</tr>
+<tr>
+<td>典型用途</td>
+<td>登录结果、出牌是否合法</td>
+<td>轮到你出牌、别人出了什么、房间广播</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-这一步加了什么">2. 这一步加了什么</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>文件</th>
+<th>改动</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>internal/route</code></td>
+<td>新增 <code>Notify=3</code> 路由 + <code>NotifyPush{Text}</code>（S2C，无请求体）</td>
+</tr>
+<tr>
+<td><code>internal/session</code></td>
+<td>登录绑定成功后，调用 <code>Push</code> 主动给该 uid 发一条通知</td>
+</tr>
+<tr>
+<td><code>cmd/testclient</code></td>
+<td>注册 Notify 处理器，收取这条&quot;没请求过&quot;的消息</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-关键代码-按-uid-推送">3. 关键代码：按 uid 推送</h2>
+<pre><code class="language-go">ctx.Proxy().Push(ctx.Context(), &amp;cluster.PushArgs{
+    Kind:    session.User,   // 按「用户(uid)」寻址，而不是「连接(cid)」
+    Target:  uid,            // 发给哪个玩家
+    Message: &amp;cluster.Message{Route: route.Notify, Data: &amp;route.NotifyPush{Text: &quot;...&quot;}},
+})</code></pre>
+<p><code>Kind</code> 决定怎么找目标：</p>
+<ul><li><code>session.User</code> —— 按 <strong>uid</strong> 找。前提是这个 uid 已经 <code>BindGate</code> 绑定过连接，</li></ul>
+<p>否则网关不知道该发给哪条连接。</p>
+<ul><li><code>session.Conn</code> —— 按 <strong>cid（连接号）</strong> 找，不需要登录。</li></ul>
+<p><strong>为什么能按 uid 找到人？</strong> 正是上一课 <code>BindGate</code> 建立的 uid ↔ 连接 对应关系 在起作用。绑定是&quot;服务端能反向找到玩家&quot;的前提——这两课是连着的。</p>
+<h2 id="4-验证-发-2-条-收-3-条">4. 验证：发 2 条，收 3 条</h2>
+<p>测试客户端只发了两个请求（登录、问候），却收到三条消息：</p>
+<pre><code class="language-text">登录响应:     玩家 1001 登录成功          ← Response（回复登录请求）
+问候响应:     你好，测试客户端……          ← Response（回复问候请求）
+服务端主动推送: 欢迎上线，已准备好开始游戏    ← Push（没有对应请求！）</code></pre>
+<p>第三条就是服务端在登录后主动推来的。没有它对应的&quot;请求&quot;，纯粹是服务端发起。</p>
+<h2 id="5-通往房间广播">5. 通往房间广播</h2>
+<p>单点 Push 之外，due 还有两个放大版（同一套寻址思路）：</p>
+<ul><li><code>Multicast</code> —— 一次推给<strong>多个 uid</strong>（房间里的几个玩家）。</li><li><code>Broadcast</code> —— 推给<strong>所有</strong>在线连接。</li></ul>
+<p>斗地主的&quot;某人出牌后通知另外两家&quot;，本质就是对房间里的 uid 列表做 <code>Multicast</code>。 所以这一课的单点 Push，是房间广播的最小原型。</p>
+<h2 id="6-本课记住三句话">6. 本课记住三句话</h2>
+<ol><li>Response 是被动回复请求，Push 是服务端主动发起，方向相反。</li><li><code>Push(Kind: session.User, Target: uid, ...)</code> 按玩家 uid 寻址，靠的是 BindGate 的绑定。</li><li>多人通知用 <code>Multicast</code>、全员用 <code>Broadcast</code>——房间广播就是它们。</li></ol>
+<h2 id="7-下一小步-保持小">7. 下一小步（保持小）</h2>
+<p>通信原语（请求响应、事件、主动推送）现在凑齐了。下一步可以离开 due， 回到<strong>纯游戏逻辑</strong>：在 <code>internal/card</code> 里定义一副牌并发牌——零网络、可用表驱动 测试，正好对照学习路线图阶段 1，也换换脑子。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

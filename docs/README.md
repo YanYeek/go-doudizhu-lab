@@ -6,7 +6,7 @@
 
 - [`rules/doudizhu-rules.md`](rules/doudizhu-rules.md)：斗地主规则、项目裁定和最低测试清单。
 - [`decisions/0001-select-dou-dizhu.md`](decisions/0001-select-dou-dizhu.md)：选择斗地主作为教程游戏的决策记录。
-- [`learning/`](learning/)：Go、due 和全栈游戏服务器学习笔记。
+- [`learning/index.html`](learning/index.html)：Go、due 和全栈游戏服务器可视化学习笔记。
 - [`go-game-server-frameworks-research.md`](go-game-server-frameworks-research.md)：Go 游戏服务器框架调研。
 
 ## 历史归档

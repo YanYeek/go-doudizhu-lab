@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>现代 Go 工具链 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link active" href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Go</p>
+        <h1>现代 Go 工具链</h1>
+        <p>理解 go.mod、internal、测试命令和 Go 版本语义。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像搬家后有了新门牌</h2>
+          <p>GOPATH 时代像必须住在指定小区；go mod 时代像你可以住任意地方，只要门牌号写在 go.mod 上，快递员就知道怎么送包裹。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>go mod 如何找到本地代码</h2>
+          
+<svg viewBox="0 0 760 260" role="img" aria-label="go mod 导入解析">
+  <rect x="40" y="45" width="250" height="80" rx="18" class="svg-box"/><text x="165" y="78" text-anchor="middle" class="svg-title">go.mod</text><text x="165" y="106" text-anchor="middle" class="svg-small">module github.com/.../server</text>
+  <rect x="470" y="45" width="250" height="80" rx="18" class="svg-box"/><text x="595" y="78" text-anchor="middle" class="svg-title">import</text><text x="595" y="106" text-anchor="middle" class="svg-small">.../server/internal/card</text>
+  <path d="M292 85 H468" class="svg-arrow"/><text x="380" y="72" text-anchor="middle" class="svg-small">前缀匹配</text>
+  <rect x="255" y="165" width="250" height="58" rx="16" class="svg-accent"/><text x="380" y="200" text-anchor="middle" class="svg-title">模块根目录下找代码</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>module 行是项目身份证</li><li>internal 是编译器守门员</li><li>go test ./... 是每天的体温计</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-gopath-退役了-但没删除" class="toc-level-2">1. GOPATH 退役了，但没删除</a><a href="#2-import-是怎么找到代码的-q7-答案落地" class="toc-level-2">2. import 是怎么找到代码的（Q7 答案落地）</a><a href="#3-internal-目录-编译器强制的私有" class="toc-level-2">3. internal 目录：编译器强制的私有</a><a href="#4-测试是一等公民" class="toc-level-2">4. 测试是一等公民</a><a href="#5-go-1-22-分水岭-q5-伏笔" class="toc-level-2">5. Go 1.22 分水岭（Q5 伏笔）</a><a href="#6-本阶段动手记录" class="toc-level-2">6. 本阶段动手记录</a><a href="#7-自检问题-能答上来才算过关" class="toc-level-2">7. 自检问题（能答上来才算过关）</a><a href="#8-升级记录-1-25-0-1-26-4-2026-06-12-当年-vs-现在补充篇" class="toc-level-2">8. 升级记录：1.25.0 → 1.26.4（2026-06-12，当年 vs 现在补充篇）</a></aside>
+        <article class="content">
+          <h1 id="阶段-0-笔记-现代-go-工具链-当年-vs-现在">阶段 0 笔记：现代 Go 工具链（当年 vs 现在）</h1>
+<blockquote><p>日期：2026-06-12 ｜ 本机 Go 1.26.4（初稿时为 1.25.0，升级记录见第 8 节）</p><p>对应路线图阶段 0，补诊断题 Q7；Q5 的版本分水岭也在这里交代。</p></blockquote>
+<h2 id="1-gopath-退役了-但没删除">1. GOPATH 退役了，但没删除</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>当年（GOPATH 时代）</th>
+<th>现在（go mod 时代）</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>代码必须放哪</td>
+<td><code>$GOPATH/src/github.com/你/项目</code></td>
+<td><strong>任意目录</strong>，本仓库在 <code>d:\work_space\...</code></td>
+</tr>
+<tr>
+<td>项目身份证</td>
+<td>目录路径本身</td>
+<td><code>go.mod</code> 里的 <code>module</code> 行</td>
+</tr>
+<tr>
+<td>依赖下载到哪</td>
+<td><code>$GOPATH/src</code>（和你的代码混在一起）</td>
+<td><code>$GOPATH/pkg/mod</code> 只读缓存，版本号隔离</td>
+</tr>
+<tr>
+<td>依赖版本</td>
+<td>没有版本概念，<code>go get</code> 拉最新</td>
+<td><code>go.mod</code> 锁定版本 + <code>go.sum</code> 校验哈希</td>
+</tr>
+</tbody>
+</table></div>
+<p>本机验证过：<code>GOPATH=C:\Users\YanYeek\go</code> 仍然存在，但它现在只是依赖缓存仓库。</p>
+<h2 id="2-import-是怎么找到代码的-q7-答案落地">2. import 是怎么找到代码的（Q7 答案落地）</h2>
+<pre><code class="language-">go.mod:  module github.com/YanYeek/go-doudizhu-lab/server
+                     │
+import &quot;github.com/YanYeek/go-doudizhu-lab/server/internal/greeting&quot;
+         └────────── 前缀匹配 module 行 ──────────┘└── 剩余部分 ──┘
+                                                    = 模块根下的相对目录
+                                                      server/internal/greeting/</code></pre>
+<ul><li>前缀命中本模块 → 直接在本地目录树里找，<strong>不联网、不看 GOPATH</strong></li><li>前缀是第三方（如 <code>github.com/gorilla/websocket</code>）→ 去 <code>go.mod</code> 查版本，</li></ul>
+<p>从模块缓存读，没有就下载</p>
+<h2 id="3-internal-目录-编译器强制的私有">3. internal 目录：编译器强制的私有</h2>
+<p><code>server/internal/...</code> 下的包，<strong>只有</strong> <code>server/</code> 模块自己能 import。 将来如果有人想 <code>import &quot;.../server/internal/game&quot;</code> 直接偷用我们的游戏逻辑， 编译器会拒绝。这就是为什么 CLAUDE.md 约定&quot;业务逻辑都放 internal/&quot;—— 对外只暴露我们想暴露的东西。当年这个规则刚出现（Go 1.4），现在已是标准实践。</p>
+<h2 id="4-测试是一等公民">4. 测试是一等公民</h2>
+<ul><li><code>xxx_test.go</code> 和被测代码同目录同包，<code>go test ./...</code> 一条命令全跑</li><li>第一个表驱动测试见 <code>server/internal/greeting/greeting_test.go</code>：</li></ul>
+<p>用例是一张表 + <code>t.Run</code> 子测试，失败时能精确报出是哪个用例</p>
+<ul><li>以后所有牌型判定测试都是这个形状（CLAUDE.md 已约定）</li></ul>
+<h2 id="5-go-1-22-分水岭-q5-伏笔">5. Go 1.22 分水岭（Q5 伏笔）</h2>
+<p>Go 1.22（2024 年初）修改了 for 循环语义：<strong>每轮迭代的循环变量是新变量</strong>。 诊断题 Q5 那段代码，老版本大概率打 <code>3 3 3</code>，1.22+ 打 <code>0 1 2</code>（乱序）。 本机是 1.26.4，按新语义走。阶段 2 微练习时会亲手验证。</p>
+<h2 id="6-本阶段动手记录">6. 本阶段动手记录</h2>
+<pre><code class="language-bash">cd server
+go mod init github.com/YanYeek/go-doudizhu-lab/server  # 生成 go.mod
+go run ./cmd/server    # 斗地主服务器 已启动
+go test ./... -v       # 2 个子测试 PASS
+go vet ./...           # 无警告</code></pre>
+<p>产出文件：</p>
+<ul><li><code>server/go.mod</code> —— 模块身份证（3 行）</li><li><code>server/cmd/server/main.go</code> —— 入口，跨包 import 演示</li><li><code>server/internal/greeting/</code> —— 复健包（含表驱动测试），<strong>阶段 1 删除</strong></li></ul>
+<h2 id="7-自检问题-能答上来才算过关">7. 自检问题（能答上来才算过关）</h2>
+<ol><li>把整个仓库移动到 E 盘，代码还能编译吗？为什么？</li><li><code>internal/greeting</code> 改名成 <code>pkg/greeting</code>，外部模块能 import 它吗？</li><li><code>go test ./...</code> 里的 <code>./...</code> 是什么意思？</li></ol>
+<h2 id="8-升级记录-1-25-0-1-26-4-2026-06-12-当年-vs-现在补充篇">8. 升级记录：1.25.0 → 1.26.4（2026-06-12，当年 vs 现在补充篇）</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>当年（GOPATH 时代）</th>
+<th>现在</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>怎么升级</td>
+<td>装新版，祈祷旧代码还能编译</td>
+<td>Go 1.x 承诺向后兼容，旧代码直接编译；<code>go.mod</code> 的 <code>go</code> 行声明项目要求的最低版本</td>
+</tr>
+<tr>
+<td>项目怎么声明版本</td>
+<td>没有声明机制</td>
+<td><code>go mod edit -go 1.26.4</code> 改一行；工具链比它旧时会报错甚至自动下载新工具链（GOTOOLCHAIN 机制，Go 1.21+）</td>
+</tr>
+</tbody>
+</table></div>
+<p>本机操作（手动解压式安装对应的升级方式）：</p>
+<pre><code class="language-powershell"># 1. 下载官方 zip：https://go.dev/dl/go1.26.4.windows-amd64.zip
+# 2. 旧版改名备份，新版解压到原位置，PATH 不用动
+Rename-Item D:\bin\go D:\bin\go-1.25.0-bak
+Expand-Archive go1.26.4.windows-amd64.zip -DestinationPath D:\bin
+# 3. 项目声明跟进 + 全量验证
+go mod edit -go 1.26.4
+go build ./... ; go test ./... ; go vet ./...   # 全部通过</code></pre>
+<p>确认新版稳定后可删除 <code>D:\bin\go-1.25.0-bak</code>。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

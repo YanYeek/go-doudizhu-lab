@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Container 与生命周期 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link active" href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">due 01</p>
+        <h1>Container 与生命周期</h1>
+        <p>理解 due 如何托管服务器组件，为什么 Serve 会让进程持续运行。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像剧院舞台监督</h2>
+          <p>演员不是自己随便上下场，舞台监督统一安排开场、换景、谢幕和清场。Container 也是这样管理 Gate、Node 等组件的生命周期。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>Container 管理启动与关闭</h2>
+          <svg viewBox="0 0 760 230" role="img" aria-label="流程图"><circle cx="70.0" cy="105" r="36" class="svg-node"/><text x="70.0" y="111" text-anchor="middle" class="svg-small">Init</text><path d="M108.0 105 H187.0" class="svg-arrow"/><circle cx="225.0" cy="105" r="36" class="svg-node"/><text x="225.0" y="111" text-anchor="middle" class="svg-small">Start</text><path d="M263.0 105 H342.0" class="svg-arrow"/><circle cx="380.0" cy="105" r="36" class="svg-node"/><text x="380.0" y="111" text-anchor="middle" class="svg-small">等待信号</text><path d="M418.0 105 H497.0" class="svg-arrow"/><circle cx="535.0" cy="105" r="36" class="svg-node"/><text x="535.0" y="111" text-anchor="middle" class="svg-small">Close</text><path d="M573.0 105 H652.0" class="svg-arrow"/><circle cx="690.0" cy="105" r="36" class="svg-node"/><text x="690.0" y="111" text-anchor="middle" class="svg-small">Destroy</text><text x="380" y="178" text-anchor="middle" class="svg-label">Container 统一编排组件生命周期</text></svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>Container 是组件总管</li><li>Serve 负责等待退出信号</li><li>进程运行不等于端口可连接</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-为什么不先通读全部-due-文档" class="toc-level-2">1. 为什么不先通读全部 due 文档</a><a href="#2-普通-go-程序为什么会退出" class="toc-level-2">2. 普通 Go 程序为什么会退出</a><a href="#3-container-是什么" class="toc-level-2">3. Container 是什么</a><a href="#4-serve-做了什么" class="toc-level-2">4. Serve 做了什么</a><a href="#5-为什么程序运行了-却不能连接-websocket" class="toc-level-2">5. 为什么程序运行了，却不能连接 WebSocket</a><a href="#6-当前入口代码" class="toc-level-2">6. 当前入口代码</a><a href="#7-配置目录与本次兼容问题" class="toc-level-2">7. 配置目录与本次兼容问题</a><a href="#8-本课验证" class="toc-level-2">8. 本课验证</a><a href="#9-本课需要记住的三句话" class="toc-level-2">9. 本课需要记住的三句话</a></aside>
+        <article class="content">
+          <h1 id="due-学习-01-container-与服务器生命周期">due 学习 01：Container 与服务器生命周期</h1>
+<blockquote><p>日期：2026-06-13</p><p></p><p>使用版本：Go 1.26.4、due v2.5.8</p><p></p><p>本课目标：不接入网络和游戏逻辑，只理解 due 如何托管并运行服务器组件。</p></blockquote>
+<h2 id="1-为什么不先通读全部-due-文档">1. 为什么不先通读全部 due 文档</h2>
+<p>due 不只是一个 WebSocket 库，它还包含 Gate、Node、Mesh、组件生命周期、 服务注册、RPC 和集群通信等概念。没有运行经验时直接通读，很容易记住名词， 却不知道它们分别解决什么问题。</p>
+<p>当前采用渐进式学习：</p>
+<ol><li>每次只引入一两个新概念。</li><li>先运行并观察现象，再解释框架行为。</li><li>学到的概念立即用于斗地主服务器。</li></ol>
+<h2 id="2-普通-go-程序为什么会退出">2. 普通 Go 程序为什么会退出</h2>
+<p>下面的程序打印完成后，<code>main</code> 函数结束，进程也随之退出：</p>
+<pre><code class="language-go">func main() {
+	fmt.Println(&quot;服务器启动&quot;)
+}</code></pre>
+<p>服务器需要持续等待客户端连接和消息，同时还需要正确处理启动和关闭流程。 真实服务器通常需要负责：</p>
+<ul><li>初始化网络、日志和业务组件；</li><li>启动组件；</li><li>等待 <code>Ctrl+C</code> 等系统退出信号；</li><li>停止接收新连接；</li><li>关闭并清理组件。</li></ul>
+<h2 id="3-container-是什么">3. Container 是什么</h2>
+<p>可以先将 <code>Container</code> 理解为：<strong>服务器组件的生命周期总管</strong>。</p>
+<pre><code class="language-go">container := due.NewContainer()</code></pre>
+<p>这行代码只创建了一个空容器。当前容器里没有 Gate、Node 或 WebSocket Server：</p>
+<pre><code class="language-text">Container
+└── 暂无组件</code></pre>
+<p>后续可以使用 <code>Add</code> 将组件交给容器管理：</p>
+<pre><code class="language-go">container.Add(component)</code></pre>
+<p>未来的服务器可能逐步形成：</p>
+<pre><code class="language-text">Container
+├── Gate：管理客户端连接和消息转发
+└── Node：处理房间与游戏业务逻辑</code></pre>
+<p>Container 本身不是游戏服务器的全部业务，它负责组织和托管构成服务器的组件。</p>
+<h2 id="4-serve-做了什么">4. Serve 做了什么</h2>
+<pre><code class="language-go">container.Serve()</code></pre>
+<p>可以先用下面的伪代码理解：</p>
+<pre><code class="language-go">func Serve() {
+	初始化所有组件()
+	启动所有组件()
+
+	等待系统退出信号()
+
+	关闭所有组件()
+	销毁所有组件()
+}</code></pre>
+<p>due Container 的主要生命周期顺序为：</p>
+<pre><code class="language-text">Init → Start → 等待退出信号 → Close → Destroy</code></pre>
+<p>因此我们不需要在 <code>main</code> 中手写无限循环，也不需要为每个组件分别处理 <code>Ctrl+C</code> 和关闭顺序。<code>Serve</code> 会让进程持续运行，收到退出信号后再执行清理。</p>
+<h2 id="5-为什么程序运行了-却不能连接-websocket">5. 为什么程序运行了，却不能连接 WebSocket</h2>
+<p>当前入口只有一个空容器：</p>
+<pre><code class="language-go">func main() {
+	container := due.NewContainer()
+	container.Serve()
+}</code></pre>
+<p><code>Serve</code> 让进程保持运行，但空容器没有网络组件，也没有任何端口在监听， 所以客户端无法建立 WebSocket 连接。</p>
+<p>下一课加入 Gate 和 WebSocket Server 后，结构才会变成：</p>
+<pre><code class="language-text">Container
+└── Gate
+    └── WebSocket Server：监听端口并接收客户端连接</code></pre>
+<p>需要区分两个概念：</p>
+<ul><li><strong>进程正在运行</strong>：程序尚未退出。</li><li><strong>网络服务可以连接</strong>：某个网络组件正在监听端口。</li></ul>
+<p>前者不自动代表后者。</p>
+<h2 id="6-当前入口代码">6. 当前入口代码</h2>
+<p>文件：<code>server/cmd/server/main.go</code></p>
+<pre><code class="language-go">package main
+
+import &quot;github.com/dobyte/due/v2&quot;
+
+func main() {
+	container := due.NewContainer()
+	container.Serve()
+}</code></pre>
+<p><code>cmd/server/main.go</code> 只负责组装与启动。以后真正的游戏规则、房间状态和消息处理， 仍然放在 <code>server/internal/</code> 下，不把业务逻辑堆进入口文件。</p>
+<h2 id="7-配置目录与本次兼容问题">7. 配置目录与本次兼容问题</h2>
+<p>due 默认读取进程工作目录下的 <code>./etc</code>，因此新增了最小配置文件 <code>server/etc/etc.toml</code>。从 <code>server/</code> 目录运行程序时，框架可以正常找到配置。</p>
+<p>due v2.5.8 默认依赖的 <code>sonic v1.14.2</code> 无法使用 Go 1.26.4 编译。本项目将 该间接依赖提升到 <code>sonic v1.15.2</code> 后通过构建。这说明：</p>
+<ul><li><code>go.mod</code> 中的直接依赖可能继续引入许多间接依赖；</li><li>最新框架版本不代表它锁定的每个间接依赖都支持最新 Go；</li><li>遇到编译错误时，应先定位依赖关系，再进行最小范围升级。</li></ul>
+<p>另外，due v2.5.8 启动画面显示 v2.5.7，这是框架内部展示版本未同步； 项目实际使用的模块版本以 <code>go.mod</code> 和 <code>go list -m</code> 的结果为准。</p>
+<h2 id="8-本课验证">8. 本课验证</h2>
+<p>在 <code>server/</code> 目录执行：</p>
+<pre><code class="language-powershell">go run ./cmd/server</code></pre>
+<p>观察到程序持续运行，按 <code>Ctrl+C</code> 后退出。随后执行：</p>
+<pre><code class="language-powershell">go test ./...
+go vet ./...
+go build ./cmd/server</code></pre>
+<p>均验证通过。</p>
+<h2 id="9-本课需要记住的三句话">9. 本课需要记住的三句话</h2>
+<ol><li><code>due.NewContainer()</code> 创建负责托管服务器组件的容器。</li><li><code>container.Add(component)</code> 将组件交给容器管理。</li><li><code>container.Serve()</code> 启动组件、等待退出信号，并负责关闭与清理。</li></ol>
+<p>下一课：向 Container 添加 Gate 与 WebSocket Server，让服务器第一次真正监听端口。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

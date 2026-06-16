@@ -159,4 +159,4 @@
 - 所有仓库数据（stars、提交日期、release 版本与日期、license、归档状态）于 **2026-06-11** 通过 GitHub 仓库页面、commits 页面与 releases atom feed 逐一抓取核实
 - 社区评价参考：[Go 语言中文网框架汇总](https://studygolang.com/articles/29184)、[知乎：Go 游戏服务器框架功能分析对比](https://zhuanlan.zhihu.com/p/693738476)、[GitHub game-server topic (Go)](https://github.com/topics/game-server?l=go)
 - star 数会持续变化，活跃度结论建议每 6–12 个月复查一次；复查方法：看 releases atom feed（`https://github.com/<owner>/<repo>/releases.atom`）和 commits 页的最近提交内容是否为实质变更
-- 本文档修正了此前归档问答（[go-game-backend-technology-selection.md](go-game-backend-technology-selection.md)）中的两处错误：due 的仓库地址应为 `dobyte/due`（非 `devagame/due`）；「Zinx 已停更、设计过时」的说法与 2026 年的实际维护状态不符
+- 本文档修正了此前归档问答（[backend-technology-selection.md](archive/exploding-minions/backend-technology-selection.md)）中的两处错误：due 的仓库地址应为 `dobyte/due`（非 `devagame/due`）；「Zinx 已停更、设计过时」的说法与 2026 年的实际维护状态不符

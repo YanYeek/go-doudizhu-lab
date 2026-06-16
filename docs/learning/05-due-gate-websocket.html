@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gate 与 WebSocket | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link active" href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">due 02</p>
+        <h1>Gate 与 WebSocket</h1>
+        <p>让 due 第一次真正监听端口，并区分 Gate、Server、Locator、Registry。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像酒店大堂</h2>
+          <p>客人先到大堂办理进入，大堂知道房间和服务台在哪里，但它不会亲自做菜。Gate 管连接和转发，真正的游戏逻辑交给 Node。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>客户端进入集群的路径</h2>
+          <svg viewBox="0 0 760 250" role="img" aria-label="分层结构图"><rect x="55" y="60" width="190" height="100" rx="18" class="svg-box"/><text x="150" y="98" text-anchor="middle" class="svg-title">客户端</text><text x="150" y="130" text-anchor="middle" class="svg-small">WebSocket</text><path d="M248 110 H282" class="svg-arrow"/><rect x="285" y="60" width="190" height="100" rx="18" class="svg-accent"/><text x="380" y="98" text-anchor="middle" class="svg-title">Gate</text><text x="380" y="130" text-anchor="middle" class="svg-small">Locator / Registry</text><path d="M478 110 H512" class="svg-arrow"/><rect x="515" y="60" width="190" height="100" rx="18" class="svg-box"/><text x="610" y="98" text-anchor="middle" class="svg-title">Node</text><text x="610" y="130" text-anchor="middle" class="svg-small">游戏逻辑</text></svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>Gate 是入口，不是业务规则</li><li>WebSocket Server 才监听端口</li><li>Redis/etcd 为多实例协作铺路</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-从空-container-到可以连接的-gate" class="toc-level-2">1. 从空 Container 到可以连接的 Gate</a><a href="#2-四个角色分别负责什么" class="toc-level-2">2. 四个角色分别负责什么</a><a href="#container-管理组件生命周期" class="toc-level-3">Container：管理组件生命周期</a><a href="#gate-客户端进入服务器集群的网关" class="toc-level-3">Gate：客户端进入服务器集群的网关</a><a href="#websocket-server-真正监听网络端口" class="toc-level-3">WebSocket Server：真正监听网络端口</a><a href="#locator-与-registry-支持多个服务协作" class="toc-level-3">Locator 与 Registry：支持多个服务协作</a><a href="#3-当前入口代码的组装顺序" class="toc-level-2">3. 当前入口代码的组装顺序</a><a href="#4-为什么-gate-不能只传-websocket-server" class="toc-level-2">4. 为什么 Gate 不能只传 WebSocket Server</a><a href="#5-配置如何影响组件" class="toc-level-2">5. 配置如何影响组件</a><a href="#6-使用-docker-compose-启动本地依赖" class="toc-level-2">6. 使用 Docker Compose 启动本地依赖</a><a href="#7-启动与验证" class="toc-level-2">7. 启动与验证</a><a href="#8-为什么现在仍然不能处理游戏消息" class="toc-level-2">8. 为什么现在仍然不能处理游戏消息</a><a href="#9-本课需要记住的四句话" class="toc-level-2">9. 本课需要记住的四句话</a></aside>
+        <article class="content">
+          <h1 id="due-学习-02-gate-与-websocket-server">due 学习 02：Gate 与 WebSocket Server</h1>
+<blockquote><p>日期：2026-06-13</p><p></p><p>本课目标：让 due 第一次真正监听网络端口，并理解 Gate、WebSocket Server、</p><p>Locator、Registry 与 Container 的职责边界。</p></blockquote>
+<h2 id="1-从空-container-到可以连接的-gate">1. 从空 Container 到可以连接的 Gate</h2>
+<p>上一课的结构是：</p>
+<pre><code class="language-text">Container
+└── 暂无组件</code></pre>
+<p><code>container.Serve()</code> 会让进程持续运行，但没有任何网络组件监听端口，因此客户端 无法连接。</p>
+<p>本课加入 Gate 后，结构变为：</p>
+<pre><code class="language-text">Container
+└── Gate
+    ├── WebSocket Server
+    ├── Redis Locator
+    └── etcd Registry</code></pre>
+<p>Container 负责启动和关闭 Gate。Gate 启动时，再启动它持有的 WebSocket Server， 并向 Registry 注册自己。</p>
+<h2 id="2-四个角色分别负责什么">2. 四个角色分别负责什么</h2>
+<h3 id="container-管理组件生命周期">Container：管理组件生命周期</h3>
+<p>Container 不直接处理网络消息。它负责按统一顺序初始化、启动、关闭和销毁组件：</p>
+<pre><code class="language-text">Init → Start → 等待退出信号 → Close → Destroy</code></pre>
+<h3 id="gate-客户端进入服务器集群的网关">Gate：客户端进入服务器集群的网关</h3>
+<p>Gate 负责：</p>
+<ul><li>管理客户端连接与断开；</li><li>接收客户端发来的消息；</li><li>将消息转发到对应的 Node；</li><li>将 Node 的响应发送给客户端。</li></ul>
+<p>Gate 通常不编写房间规则和卡牌规则。它更像游戏服务器集群的入口与转发站。</p>
+<h3 id="websocket-server-真正监听网络端口">WebSocket Server：真正监听网络端口</h3>
+<pre><code class="language-go">websocketServer := ws.NewServer()</code></pre>
+<p>WebSocket Server 负责监听 <code>3553</code> 端口、执行 WebSocket 握手、收发字节数据。 Gate 通过 <code>gate.WithServer(websocketServer)</code> 使用它。</p>
+<h3 id="locator-与-registry-支持多个服务协作">Locator 与 Registry：支持多个服务协作</h3>
+<p>due 的 Gate 按分布式架构设计，因此必须提供 Locator 和 Registry。</p>
+<ul><li>Redis Locator：记录某个玩家当前连接在哪个 Gate。</li><li>etcd Registry：记录集群中有哪些 Gate、Node 等服务，以及它们的地址。</li></ul>
+<p>当前只有一个 Gate，它们看起来有些超前；以后运行多个 Gate 和 Node 时，这两个 角色会让服务能够找到彼此。</p>
+<h2 id="3-当前入口代码的组装顺序">3. 当前入口代码的组装顺序</h2>
+<p>文件：<code>server/cmd/server/main.go</code></p>
+<pre><code class="language-go">container := due.NewContainer()
+
+websocketServer := ws.NewServer()
+locator := redis.NewLocator()
+registry := etcd.NewRegistry()
+
+gateway := gate.NewGate(
+	gate.WithServer(websocketServer),
+	gate.WithLocator(locator),
+	gate.WithRegistry(registry),
+)
+
+container.Add(gateway)
+container.Serve()</code></pre>
+<p>可以按下面的顺序阅读：</p>
+<ol><li>创建负责总生命周期的 Container。</li><li>创建 Gate 依赖的三个对象。</li><li>使用 Functional Options 将依赖交给 Gate。</li><li>将 Gate 加入 Container。</li><li>启动 Container，Container 再启动 Gate。</li></ol>
+<p><code>gate.WithServer</code>、<code>gate.WithLocator</code> 和 <code>gate.WithRegistry</code> 是 Go 常见的 Functional Options 模式。它允许构造函数接收可选配置，同时避免参数列表过长。</p>
+<h2 id="4-为什么-gate-不能只传-websocket-server">4. 为什么 Gate 不能只传 WebSocket Server</h2>
+<p>阅读 due Gate 的 <code>Init</code> 方法可以看到，它会检查三个必要依赖：</p>
+<pre><code class="language-text">Server   必须存在
+Locator  必须存在
+Registry 必须存在</code></pre>
+<p>这说明 due 的 Gate 从设计上就是集群网关，而不是简单的 WebSocket 包装器。</p>
+<p>我们没有为了省事编写假的 Locator 或 Registry，而是使用 due 官方支持的 Redis 与 etcd 实现。这样当前学习的代码以后可以自然扩展到多个服务实例。</p>
+<h2 id="5-配置如何影响组件">5. 配置如何影响组件</h2>
+<p>文件：<code>server/etc/etc.toml</code></p>
+<pre><code class="language-toml">[network.ws.server]
+addr = &quot;:3553&quot;
+path = &quot;/ws&quot;
+
+[locate.redis]
+addrs = [&quot;127.0.0.1:6379&quot;]
+
+[registry.etcd]
+endpoints = [&quot;127.0.0.1:2379&quot;]</code></pre>
+<p>代码负责表达“使用哪些组件以及如何组装”；配置负责表达“组件运行在哪里”。</p>
+<p>因此：</p>
+<ul><li>修改 WebSocket 端口，不需要改 Go 代码；</li><li>修改 Redis 或 etcd 地址，不需要重新设计 Gate；</li><li>不同环境可以使用不同配置运行同一份程序。</li></ul>
+<h2 id="6-使用-docker-compose-启动本地依赖">6. 使用 Docker Compose 启动本地依赖</h2>
+<p>文件：<code>server/compose.yaml</code></p>
+<p>在 <code>server/</code> 目录执行：</p>
+<pre><code class="language-powershell">docker compose up -d
+docker compose ps</code></pre>
+<p>其中 <code>-d</code> 表示在后台运行。当前 Compose 只启动本课必需的两个服务：</p>
+<pre><code class="language-text">Redis  → 6379
+etcd   → 2379</code></pre>
+<p>停止它们：</p>
+<pre><code class="language-powershell">docker compose down</code></pre>
+<h2 id="7-启动与验证">7. 启动与验证</h2>
+<p>先启动依赖，再启动 Gate：</p>
+<pre><code class="language-powershell">docker compose up -d
+go run ./cmd/server</code></pre>
+<p>成功启动后，due 会输出类似信息：</p>
+<pre><code class="language-text">Gate
+Name: doudizhu-gate
+Server: [ws] 0.0.0.0:3553
+Locator: redis
+Registry: etcd</code></pre>
+<p>本课已经完成以下验证：</p>
+<pre><code class="language-text">2379  etcd             正在监听
+6379  Redis            正在监听
+3553  WebSocket Gate   正在监听</code></pre>
+<p>并实际连接 <code>ws://127.0.0.1:3553/ws</code>，WebSocket 状态成功从 <code>Open</code> 变为 <code>Closed</code>。</p>
+<h2 id="8-为什么现在仍然不能处理游戏消息">8. 为什么现在仍然不能处理游戏消息</h2>
+<p>当前 Gate 可以接受连接，但还没有 Node：</p>
+<pre><code class="language-text">客户端 → Gate → 没有可以处理消息的 Node</code></pre>
+<p>Gate 负责连接与转发，不负责斗地主的游戏逻辑。下一课需要加入 Node，并注册 第一条消息路由，才能形成完整的请求与响应：</p>
+<pre><code class="language-text">Go 测试客户端 → WebSocket Gate → Node 路由处理器 → 响应</code></pre>
+<h2 id="9-本课需要记住的四句话">9. 本课需要记住的四句话</h2>
+<ol><li>Container 管理组件的生命周期。</li><li>Gate 管理客户端连接，并在客户端与 Node 之间转发消息。</li><li>WebSocket Server 才是真正监听网络端口的对象。</li><li>Locator 找玩家连接，Registry 找服务实例。</li></ol>
+<p>下一课：加入第一个 Node 与消息路由，并使用 Go 测试客户端完成首次请求响应。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

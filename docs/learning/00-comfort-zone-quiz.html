@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Go 舒适区诊断 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link active" href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">诊断</p>
+        <h1>Go 舒适区诊断</h1>
+        <p>用代码阅读题判断哪些知识还在舒适区，哪些需要重新焊牢。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像体检，不像考试</h2>
+          <p>这篇不是为了证明会不会，而是像体检报告一样定位血压、视力和心肺。答错不是失败，反而能告诉后面的训练该从哪块肌肉开始练。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>舒适区 / 学习区 / 困难区</h2>
+          
+<svg viewBox="0 0 760 260" role="img" aria-label="舒适区、学习区、困难区">
+  <circle cx="250" cy="130" r="70" class="svg-zone zone-safe"/>
+  <circle cx="250" cy="130" r="115" class="svg-zone zone-learn"/>
+  <circle cx="250" cy="130" r="158" class="svg-zone zone-hard"/>
+  <text x="250" y="126" text-anchor="middle" class="svg-title">舒适区</text>
+  <text x="250" y="66" text-anchor="middle" class="svg-label">学习区</text>
+  <text x="250" y="18" text-anchor="middle" class="svg-label">困难区</text>
+  <path d="M435 78 H660" class="svg-line"/>
+  <path d="M435 130 H660" class="svg-line"/>
+  <path d="M435 182 H660" class="svg-line"/>
+  <text x="675" y="84" class="svg-small">会读语法</text>
+  <text x="675" y="136" class="svg-small">重新焊牢细节</text>
+  <text x="675" y="188" class="svg-small">暂缓分布式和性能调优</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>诚实标记“不知道”比猜对更有价值</li><li>学习路线从真实薄弱点长出来</li><li>并发、go mod、错误包装是近期重点</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#第-1-层-语言基础-gopath-时代就有" class="toc-level-2">第 1 层：语言基础（GOPATH 时代就有）</a><a href="#q1-切片" class="toc-level-3">Q1 切片</a><a href="#q2-map-取值" class="toc-level-3">Q2 map 取值</a><a href="#q3-方法接收者" class="toc-level-3">Q3 方法接收者</a><a href="#第-2-层-并发-zinx-时代应该接触过" class="toc-level-2">第 2 层：并发（zinx 时代应该接触过）</a><a href="#q4-channel" class="toc-level-3">Q4 channel</a><a href="#q5-goroutine-与循环变量" class="toc-level-3">Q5 goroutine 与循环变量</a><a href="#q6-select" class="toc-level-3">Q6 select</a><a href="#第-3-层-现代-go-go-mod-之后的世界" class="toc-level-2">第 3 层：现代 Go（go mod 之后的世界）</a><a href="#q7-模块与导入" class="toc-level-3">Q7 模块与导入</a><a href="#q8-错误包装" class="toc-level-3">Q8 错误包装</a><a href="#q9-泛型" class="toc-level-3">Q9 泛型</a><a href="#作答记录与评估" class="toc-level-2">作答记录与评估</a><a href="#逐题判定" class="toc-level-3">逐题判定</a><a href="#舒适区地图" class="toc-level-3">舒适区地图</a><a href="#结论" class="toc-level-3">结论</a></aside>
+        <article class="content">
+          <h1 id="go-舒适区诊断-代码阅读题">Go 舒适区诊断（代码阅读题）</h1>
+<blockquote><p>目的：按学习区理论（舒适区 / 学习区 / 困难区）定位当前 Go 水平，</p><p>据此规划游戏服务器框架的分阶段学习路线。</p><p>作答方式：阅读代码，说出输出或行为 + 一句话原因。</p><p><strong>不确定就直接写&quot;不知道&quot;或&quot;猜的&quot;</strong>——诚实作答才能测准，这不是考试。</p><p>日期：2026-06-11</p></blockquote>
+<h2 id="第-1-层-语言基础-gopath-时代就有">第 1 层：语言基础（GOPATH 时代就有）</h2>
+<h3 id="q1-切片">Q1 切片</h3>
+<pre><code class="language-go">a := []int{1, 2, 3}
+b := a[:2]
+b = append(b, 99)
+fmt.Println(a)</code></pre>
+<p>输出是什么？答：1,99</p>
+<h3 id="q2-map-取值">Q2 map 取值</h3>
+<pre><code class="language-go">m := map[string]int{&quot;x&quot;: 1}
+v := m[&quot;y&quot;]
+v2, ok := m[&quot;y&quot;]
+fmt.Println(v, v2, ok)</code></pre>
+<p>输出是什么？答：不知道</p>
+<h3 id="q3-方法接收者">Q3 方法接收者</h3>
+<pre><code class="language-go">type Counter struct{ n int }
+
+func (c Counter) IncVal()  { c.n++ }
+func (c *Counter) IncPtr() { c.n++ }
+
+func main() {
+    c := Counter{}
+    c.IncVal()
+    c.IncPtr()
+    fmt.Println(c.n)
+}</code></pre>
+<p>输出是什么？答：不知道</p>
+<h2 id="第-2-层-并发-zinx-时代应该接触过">第 2 层：并发（zinx 时代应该接触过）</h2>
+<h3 id="q4-channel">Q4 channel</h3>
+<pre><code class="language-go">func main() {
+    ch := make(chan int)
+    ch &lt;- 1
+    fmt.Println(&lt;-ch)
+}</code></pre>
+<p>这段程序运行后会发生什么？如果有问题，怎么改？答：细节忘了</p>
+<h3 id="q5-goroutine-与循环变量">Q5 goroutine 与循环变量</h3>
+<pre><code class="language-go">var wg sync.WaitGroup
+for i := 0; i &lt; 3; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        fmt.Println(i)
+    }()
+}
+wg.Wait()</code></pre>
+<p>输出是什么？（提示：不同 Go 版本下答案可能不一样，知道多少说多少）答：不知道</p>
+<h3 id="q6-select">Q6 select</h3>
+<pre><code class="language-go">ch := make(chan int)
+select {
+case v := &lt;-ch:
+    fmt.Println(&quot;got&quot;, v)
+case &lt;-time.After(time.Second):
+    fmt.Println(&quot;timeout&quot;)
+}</code></pre>
+<p>这段程序的行为是什么？答：Channel，信道的变量，接触到的不同变量做出不同的行为</p>
+<h2 id="第-3-层-现代-go-go-mod-之后的世界">第 3 层：现代 Go（go mod 之后的世界）</h2>
+<h3 id="q7-模块与导入">Q7 模块与导入</h3>
+<pre><code class="language-go">// 文件 server/go.mod 内容：
+// module github.com/YanYeek/go-doudizhu-lab/server
+//
+// 某个 .go 文件里：
+import &quot;github.com/YanYeek/go-doudizhu-lab/server/internal/card&quot;</code></pre>
+<p>这个 import 会去哪里找代码？还需要把项目放进 GOPATH 吗？路径里的 <code>internal</code> 有什么特殊含义？</p>
+<p>答：不知道</p>
+<h3 id="q8-错误包装">Q8 错误包装</h3>
+<pre><code class="language-go">var ErrNotFound = errors.New(&quot;not found&quot;)
+
+func find() error {
+    return fmt.Errorf(&quot;查询用户失败: %w&quot;, ErrNotFound)
+}
+
+func main() {
+    err := find()
+    fmt.Println(errors.Is(err, ErrNotFound))
+    fmt.Println(err == ErrNotFound)
+}</code></pre>
+<p>两行各输出什么？<code>%w</code> 是干什么的？</p>
+<p>答：不知道</p>
+<h3 id="q9-泛型">Q9 泛型</h3>
+<pre><code class="language-go">func Map[T, U any](xs []T, f func(T) U) []U {
+    out := make([]U, 0, len(xs))
+    for _, x := range xs {
+        out = append(out, f(x))
+    }
+    return out
+}
+
+func main() {
+    fmt.Println(Map([]int{1, 2, 3}, func(i int) int { return i * 2 }))
+}</code></pre>
+<p>这段代码能编译吗？这是 Go 的什么特性、大约哪个版本引入？输出是什么？</p>
+<p>答：编译不知道，泛型和泛型约束 版本忘了 输出不确定</p>
+<p>---</p>
+<h2 id="作答记录与评估">作答记录与评估</h2>
+<blockquote><p>评估日期：2026-06-12</p></blockquote>
+<h3 id="逐题判定">逐题判定</h3>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>题号</th>
+<th>考点</th>
+<th>作答</th>
+<th>判定</th>
+<th>正确答案要点</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Q1</td>
+<td>切片共享底层数组</td>
+<td><code>1,99</code></td>
+<td>半对</td>
+<td>输出 <code>[1 2 99]</code>。<code>b := a[:2]</code> 与 <code>a</code> 共享底层数组且 cap=3，<code>append</code> 未扩容，直接把 99 写进了下标 2 的位置。你意识到了 append 会影响 <code>a</code>（方向对），但具体写到哪、长度怎么变没说清</td>
+</tr>
+<tr>
+<td>Q2</td>
+<td>map 零值与 comma-ok</td>
+<td>不知道</td>
+<td>不会</td>
+<td>输出 <code>0 0 false</code>。取不存在的 key 返回元素类型的零值，不会 panic；<code>, ok</code> 形式用来区分「值就是 0」和「key 不存在」</td>
+</tr>
+<tr>
+<td>Q3</td>
+<td>值接收者 vs 指针接收者</td>
+<td>不知道</td>
+<td>不会</td>
+<td>输出 <code>1</code>。值接收者拿到的是副本，<code>IncVal</code> 改不到原结构体；指针接收者才能改。这是以后写游戏状态（房间、玩家）必踩的坑</td>
+</tr>
+<tr>
+<td>Q4</td>
+<td>无缓冲 channel 阻塞</td>
+<td>细节忘了</td>
+<td>不会</td>
+<td>死锁 panic。无缓冲 channel 的发送会阻塞到有人接收，main 自己发自己收，永远等不到。改法：<code>make(chan int, 1)</code> 加缓冲，或把接收放进另一个 goroutine</td>
+</tr>
+<tr>
+<td>Q5</td>
+<td>goroutine + 循环变量</td>
+<td>不知道</td>
+<td>不会</td>
+<td>Go ≤1.21：很可能打出 <code>3 3 3</code>（闭包共享同一个 <code>i</code>）；Go ≥1.22 起每轮循环 <code>i</code> 是新变量，输出 <code>0 1 2</code>（顺序不定）。这是语言近年最大的语义修正之一</td>
+</tr>
+<tr>
+<td>Q6</td>
+<td>select 多路复用</td>
+<td>概念模糊</td>
+<td>半对</td>
+<td>没有人往 <code>ch</code> 发数据，第一个 case 永远不就绪，1 秒后 <code>time.After</code> 触发，打印 <code>timeout</code>。select 是「等多个 channel，谁先就绪走谁」——你记得大方向，细节（阻塞行为、超时模式）丢了</td>
+</tr>
+<tr>
+<td>Q7</td>
+<td>go mod / internal</td>
+<td>不知道</td>
+<td>不会</td>
+<td>import 按 go.mod 的 module 路径在<strong>本模块内</strong>解析，直接映射到 <code>server/internal/card</code> 目录，完全不需要 GOPATH；<code>internal</code> 是编译器强制的私有目录，模块外无法 import</td>
+</tr>
+<tr>
+<td>Q8</td>
+<td>错误包装 errors.Is/%w</td>
+<td>不知道</td>
+<td>不会</td>
+<td><code>true</code> / <code>false</code>。<code>%w</code> 把原错误包进新错误形成错误链，<code>errors.Is</code> 沿链比对；<code>==</code> 只比表层所以是 false。Go 1.13 引入，现代 Go 错误处理的基石</td>
+</tr>
+<tr>
+<td>Q9</td>
+<td>泛型</td>
+<td>知道名词</td>
+<td>边缘</td>
+<td>能编译，泛型是 Go 1.18 引入，输出 <code>[2 4 6]</code>。你知道「泛型/泛型约束」这两个词但读不出行为</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="舒适区地图">舒适区地图</h3>
+<pre><code class="language-">舒适区（还在）：
+  ✔ 能读 Go 语法，不被代码形态吓到
+  ✔ 概念名词还在：channel / select / 泛型 / goroutine
+
+学习区（本次路线图的主战场）：
+  → 第 1 层基础的&quot;操作性知识&quot;：切片机制、map 零值、值/指针接收者
+  → 并发原语的精确行为：channel 阻塞、WaitGroup、select 超时
+  → 现代 Go 工具链：go mod、internal、errors 包装、泛型读懂即可
+
+困难区（暂不碰）：
+  ✘ 分布式、网关分层、性能调优、反射、unsafe</code></pre>
+<h3 id="结论">结论</h3>
+<p>GOPATH 时代的知识只剩「语法阅读能力 + 概念索引」，操作性细节基本清零—— 这反而是个干净的起点：<strong>不需要纠正坏习惯，只需要把每个知识点在项目里 第一次用到的地方重新焊牢</strong>。路线图原则：不单独刷语法书，每一步开发只引入 1~2 个新知识点，学了立刻写进 <code>server/</code> 的真实代码里。</p>
+<p>详细路线见 <a href="01-roadmap.html">01-roadmap.md</a>。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

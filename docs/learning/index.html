@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>斗地主学习笔记 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <main class="index">
+    <section class="index-hero">
+      <p class="eyebrow">Learning Notes</p>
+      <h1>斗地主全栈游戏开发学习地图</h1>
+      <p>这些 HTML 页面由原 Markdown 笔记重构而来：保留文字细节，增加图形化关系、阶段导航和生活类比，方便以后边写代码边复盘。</p>
+      <svg viewBox="0 0 760 220" role="img" aria-label="学习路线"><circle cx="80" cy="110" r="34" class="svg-node"/><text x="80" y="116" text-anchor="middle" class="svg-small">工具链</text><path d="M116 110 H164" class="svg-arrow"/><circle cx="200" cy="110" r="34" class="svg-node"/><text x="200" y="116" text-anchor="middle" class="svg-small">牌与牌型</text><path d="M236 110 H284" class="svg-arrow"/><circle cx="320" cy="110" r="34" class="svg-node"/><text x="320" y="116" text-anchor="middle" class="svg-small">连接层</text><path d="M356 110 H404" class="svg-arrow"/><circle cx="440" cy="110" r="34" class="svg-node"/><text x="440" y="116" text-anchor="middle" class="svg-small">状态机</text><path d="M476 110 H524" class="svg-arrow"/><circle cx="560" cy="110" r="34" class="svg-node"/><text x="560" y="116" text-anchor="middle" class="svg-small">Cocos</text><path d="M596 110 H644" class="svg-arrow"/><circle cx="680" cy="110" r="34" class="svg-node"/><text x="680" y="116" text-anchor="middle" class="svg-small">进阶</text><text x="380" y="178" text-anchor="middle" class="svg-label">每一步只引入 1-2 个新概念</text></svg>
+    </section>
+    <section class="index-grid"><a class="index-card" href="00-comfort-zone-quiz.html">
+  <span>00 · 诊断</span>
+  <h2>00 Go 舒适区诊断</h2>
+  <p>用代码阅读题判断哪些知识还在舒适区，哪些需要重新焊牢。</p>
+</a><a class="index-card" href="01-roadmap.html">
+  <span>01 · 路线</span>
+  <h2>01 学习区路线图</h2>
+  <p>从 Go 工具链复健，到纯逻辑、连接层、房间状态机和 Cocos 联调。</p>
+</a><a class="index-card" href="02-modern-go-toolchain.html">
+  <span>02 · Go</span>
+  <h2>02 现代 Go 工具链</h2>
+  <p>理解 go.mod、internal、测试命令和 Go 版本语义。</p>
+</a><a class="index-card" href="03-due-container-lifecycle.html">
+  <span>03 · due 01</span>
+  <h2>03 Container 与生命周期</h2>
+  <p>理解 due 如何托管服务器组件，为什么 Serve 会让进程持续运行。</p>
+</a><a class="index-card" href="04-software-engineering-map.html">
+  <span>04 · 地图</span>
+  <h2>04 软件工程能力全景地图</h2>
+  <p>把编码、测试、Git、评审、CI、安全、运维等能力映射到本项目。</p>
+</a><a class="index-card" href="05-due-gate-websocket.html">
+  <span>05 · due 02</span>
+  <h2>05 Gate 与 WebSocket</h2>
+  <p>让 due 第一次真正监听端口，并区分 Gate、Server、Locator、Registry。</p>
+</a><a class="index-card" href="06-development-learning-workflow.html">
+  <span>06 · 工作流</span>
+  <h2>06 纵向切片开发工作流</h2>
+  <p>先用 Go 客户端快速反馈，再接入最小 Cocos 联调。</p>
+</a><a class="index-card" href="07-first-route-and-codec.html">
+  <span>07 · due 03</span>
+  <h2>07 第一条路由与编解码器</h2>
+  <p>跑通客户端 → Gate → Node → 响应，并理解 json/proto 必须一致。</p>
+</a><a class="index-card" href="08-route-vs-event.html">
+  <span>08 · due 04</span>
+  <h2>08 Route 与 Event</h2>
+  <p>解释 connect/disconnect 警告，以及路由和事件的根本区别。</p>
+</a><a class="index-card" href="09-login-and-binding.html">
+  <span>09 · due 05</span>
+  <h2>09 登录与连接绑定</h2>
+  <p>用 BindGate 把匿名连接绑定成可识别的玩家 uid。</p>
+</a><a class="index-card" href="10-server-push.html">
+  <span>10 · due 06</span>
+  <h2>10 服务端主动推送</h2>
+  <p>让服务端按 uid 主动给玩家发消息，为房间广播打基础。</p>
+</a></section>
+  </main>
+</body>
+</html>

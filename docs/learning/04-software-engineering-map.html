@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>软件工程能力全景地图 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link active" href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">地图</p>
+        <h1>软件工程能力全景地图</h1>
+        <p>把编码、测试、Git、评审、CI、安全、运维等能力映射到本项目。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像游戏大地图</h2>
+          <p>主线任务是做斗地主服务器，但地图上还有测试、版本控制、安全、可观测性这些支线。先点亮 P0 区域，别一开始就冲进高等级地图。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>P0 / P1 / P2 能力分层</h2>
+          
+<svg viewBox="0 0 760 300" role="img" aria-label="软件工程能力分层">
+  <rect x="80" y="190" width="600" height="58" rx="14" class="svg-accent"/><text x="380" y="226" text-anchor="middle" class="svg-title">P0：编码 / 测试 / Git / 文档 / 评审</text>
+  <rect x="135" y="120" width="490" height="58" rx="14" class="svg-box"/><text x="380" y="156" text-anchor="middle" class="svg-title">P1：CI / ADR / 可观测性</text>
+  <rect x="210" y="50" width="340" height="58" rx="14" class="svg-box-muted"/><text x="380" y="86" text-anchor="middle" class="svg-title">P2：安全深化 / 部署 / 效能度量</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>P0 现在就练，P1 随阶段引入</li><li>文档按 Diataxis 分清用途</li><li>单人项目也要保留工程纪律</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#0-总纲-软件工程的官方知识地图" class="toc-level-2">0. 总纲：软件工程的官方知识地图</a><a href="#1-编码质量与风格-p0" class="toc-level-2">1. 编码质量与风格 ｜ P0</a><a href="#2-测试策略-p0" class="toc-level-2">2. 测试策略 ｜ P0</a><a href="#3-版本控制与协作-p0" class="toc-level-2">3. 版本控制与协作 ｜ P0</a><a href="#4-代码评审-p0-单人变体" class="toc-level-2">4. 代码评审 ｜ P0（单人变体）</a><a href="#5-ci-cd-p1-阶段-2-引入" class="toc-level-2">5. CI / CD ｜ P1（阶段 2 引入）</a><a href="#6-架构设计与决策记录-p1" class="toc-level-2">6. 架构设计与决策记录 ｜ P1</a><a href="#7-文档工程-p0-已在练-给出框架" class="toc-level-2">7. 文档工程 ｜ P0（已在练，给出框架）</a><a href="#8-可观测性-p1-阶段-3-起步-p2-完善" class="toc-level-2">8. 可观测性 ｜ P1（阶段 3 起步，P2 完善）</a><a href="#9-安全-p2-但有两条-p0-红线" class="toc-level-2">9. 安全 ｜ P2（但有两条 P0 红线）</a><a href="#10-配置与部署运维-p2" class="toc-level-2">10. 配置与部署运维 ｜ P2</a><a href="#11-交付效能度量-p2-先知道-后实践" class="toc-level-2">11. 交付效能度量 ｜ P2（先知道，后实践）</a><a href="#12-反过度工程化守则-单人项目专属" class="toc-level-2">12. 反过度工程化守则（单人项目专属）</a><a href="#13-优先级总表与路线图挂接" class="toc-level-2">13. 优先级总表与路线图挂接</a><a href="#14-来源可信度说明" class="toc-level-2">14. 来源可信度说明</a></aside>
+        <article class="content">
+          <h1 id="软件工程能力全景地图-面向本项目的学习版">软件工程能力全景地图（面向本项目的学习版）</h1>
+<blockquote><p>研究日期：2026-06-13</p><p>目的：以本仓库（Go + due 后端、Cocos 客户端、monorepo）为练兵场，全面且系统地</p><p>提升软件工程能力。本文是「地图」——标出每个能力维度的权威参考与本项目落地点；</p><p>具体怎么练，挂接到 <a href="01-roadmap.html">01-roadmap.md</a> 的阶段推进。</p><p>方法：多源联网检索 + 交叉核对，所有维度均给出一手权威来源；版本信息已核实</p><p>到 2026-06（SWEBOK v4.0、OWASP Top 10 2025、DORA 2025 报告）。</p></blockquote>
+<h2 id="0-总纲-软件工程的官方知识地图">0. 总纲：软件工程的官方知识地图</h2>
+<p><strong>SWEBOK v4.0</strong>（IEEE 软件工程知识体系指南，2024-10-15 发布）是行业公认的 学科边界定义，共 <strong>18 个知识域</strong>，v4 新增了三个：软件架构、软件安全、软件工程 运维——这个增量本身就说明了行业重心的变化（架构显学化、安全左移、DevOps 常态化）。</p>
+<ul><li>来源：<a href="https://www.computer.org/education/bodies-of-knowledge/software-engineering">IEEE Computer Society — SWEBOK</a>（一手，权威定义）</li><li>参考：<a href="https://en.wikipedia.org/wiki/Software_Engineering_Body_of_Knowledge">Wikipedia — SWEBOK</a>（二手，概览用）</li></ul>
+<p>本文不照搬 18 个知识域，而是压缩成对单人学习项目<strong>可操作</strong>的 11 个维度， 每个维度标注优先级：</p>
+<ul><li><strong>P0</strong>＝现在就该练（阶段 0~1 已经在练）</li><li><strong>P1</strong>＝阶段 2~3 引入</li><li><strong>P2</strong>＝阶段 4 之后按需引入</li></ul>
+<h2 id="1-编码质量与风格-p0">1. 编码质量与风格 ｜ P0</h2>
+<p><strong>要点</strong>：可读性优先级排序——清晰 &gt; 简单 &gt; 简洁 &gt; 可维护 &gt; 一致（Google Go 风格指南的原则顺序）；包组织遵循官方模块布局（<code>cmd/</code> 放入口、<code>internal/</code> 藏实现）。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://google.github.io/styleguide/go/">Google Go Style Guide</a>（一手，Google 全体 Go 代码的规范）</li><li><a href="https://go.dev/doc/modules/layout">Go 官方：Organizing a Go module</a>（一手，cmd/internal 布局的官方出处）</li><li>书：《代码大全 2》（编码层面的百科全书）、《重构》第 2 版（识别坏味道的词汇表）</li></ul>
+<p><strong>本项目落地</strong>：<code>server/</code> 已按官方布局组织；每次写完代码跑 <code>go vet</code>、<code>gofmt</code>； 阶段 1 写牌组逻辑时对照风格指南的「清晰优先」原则自查命名与函数长度。</p>
+<p><strong>常见误区</strong>：把「风格」理解为个人偏好之争——Go 的世界里风格是工具链强制的 （gofmt 没有配置项），把争论时间省下来。</p>
+<h2 id="2-测试策略-p0">2. 测试策略 ｜ P0</h2>
+<p><strong>要点</strong>：测试金字塔——大量单元测试打底、少量集成测试居中、极少端到端测试封顶； 层级越高越慢越脆弱（flaky）。Go 的表驱动测试是单元层的惯用形态。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://martinfowler.com/articles/practical-test-pyramid.html">The Practical Test Pyramid — Ham Vocke @ martinfowler.com</a>（一手，最常被引用的完整论述）</li></ul>
+<p><strong>本项目落地</strong>：金字塔在本项目的具体形状——</p>
+<ul><li>底座：<code>internal/card</code>、<code>internal/pattern</code>（未来的牌组/卡牌效果包）的表驱动测试，</li></ul>
+<p>这是规则正确性的生命线，目标是每种卡牌效果至少一张用例表</p>
+<ul><li>中层：房间状态机的集成测试（不连真实网络，用内存消息驱动状态机）</li><li>塔尖：极少数 WebSocket 全链路冒烟测试（起真实 Gate，跑一局最短对局）</li></ul>
+<p><strong>常见误区</strong>：单人项目最容易犯「只写跑得通的 happy path」——规则引擎的价值 恰恰在边界用例（爆炸牌插回位置 0、两张 Nope 抵消、Clone 复制 Clone 被拒绝）。</p>
+<h2 id="3-版本控制与协作-p0">3. 版本控制与协作 ｜ P0</h2>
+<p><strong>要点</strong>：主干开发（trunk-based development）——分支少而短命、至少每日合回主干。 DORA 多年数据反复验证：主干开发与四大交付指标全部正相关。提交信息结构化 （Conventional Commits），让历史可检索、可自动化。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://dora.dev/capabilities/trunk-based-development/">DORA Capabilities: Trunk-based Development</a>（一手，附研究数据）</li><li><a href="https://trunkbaseddevelopment.com/continuous-integration/">trunkbaseddevelopment.com</a>（专题站，实践细节）</li></ul>
+<p><strong>本项目落地</strong>：已在执行——main 主干 + Conventional Commits（scope 区分 client/server/proto/docs）+ 原子提交。下一步可以练：功能较大时开短命分支， 体验「分支活不过三天」的纪律。</p>
+<p><strong>常见误区</strong>：单人项目把 Git 当网盘（一天结束 <code>git add . &amp;&amp; git commit -m &quot;update&quot;</code>）。 提交粒度 = 未来排查问题时 <code>git bisect</code> 的分辨率。</p>
+<h2 id="4-代码评审-p0-单人变体">4. 代码评审 ｜ P0（单人变体）</h2>
+<p><strong>要点</strong>：Google 的评审标准只有一句话——<strong>「CL 让代码库整体健康度变好就该批准， 不存在完美的代码」</strong>。评审者依次看：设计、功能、复杂度、测试、命名、注释、一致性。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://google.github.io/eng-practices/review/">Google Engineering Practices — How to do a code review</a>（一手，业界引用最多的评审手册）</li></ul>
+<p><strong>本项目落地</strong>：单人没有同事，但评审可以这样练——</p>
+<ul><li>提交前用 Google 清单自查一遍 diff（设计→功能→复杂度→测试→命名）</li><li>用 AI 评审做「第二双眼睛」：本仓库已装 codex 插件（<code>/codex:review</code>），</li></ul>
+<p>Claude Code 也有 <code>/code-review</code>——两个模型交叉挑刺</p>
+<ul><li>隔周回看自己两周前的代码并写下「现在会怎么写」，这是单人最有效的评审替代</li></ul>
+<p><strong>常见误区</strong>：把评审等同于挑语法错——清单里「设计是否合理」排第一，语法排最后。</p>
+<h2 id="5-ci-cd-p1-阶段-2-引入">5. CI / CD ｜ P1（阶段 2 引入）</h2>
+<p><strong>要点</strong>：持续集成 = 主干开发 + 每次提交自动跑快速测试套件，保证主干永远可用； 持续交付在此之上让发布成为「随时可按的按钮」。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://www.martinfowler.com/articles/continuousIntegration.html">Continuous Integration — Martin Fowler</a>（一手，概念原典，2024 年重写版）</li><li><a href="https://dora.dev/capabilities/continuous-integration/">DORA Capabilities: Continuous Integration</a>（一手，研究证据）</li></ul>
+<p><strong>本项目落地</strong>：GitHub Actions 一个 workflow 即可起步：push 时跑 <code>go build ./... &amp;&amp; go test ./... &amp;&amp; go vet ./...</code>（本地 <code>scripts/python/dev.py check</code> 的云端版）。阶段 4 联调时再加 Cocos 构建检查。<strong>不需要</strong>部署流水线—— 本项目的&quot;CD&quot;先做到「主干永远绿」就够了。</p>
+<p><strong>常见误区</strong>：单人项目搭复杂流水线是典型过度工程；反过来「反正只有我一个人， 不用 CI」也错——CI 防的不是别人，是上周的自己。</p>
+<h2 id="6-架构设计与决策记录-p1">6. 架构设计与决策记录 ｜ P1</h2>
+<p><strong>要点</strong>：架构能力 = 做决策的能力 + 让决策可追溯的能力。ADR（架构决策记录， Michael Nygard 2011 年定型）用五段式记录每个重要决策：标题、状态、上下文、 决策、后果——几个月后回看「系统为什么长这样」全靠它。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions">Documenting Architecture Decisions — Michael Nygard</a>（一手，ADR 原典）</li><li><a href="https://adr.github.io/">adr.github.io</a>（模板与工具集合）</li><li>书：《Designing Data-Intensive Applications》（理解状态、复制、一致性的底层心智模型，P2 阶段精读）</li></ul>
+<p><strong>本项目落地</strong>：本仓库已经有框架调研和技术选型两份“准 ADR”，并在 <code>docs/decisions/0001-select-dou-dizhu.md</code> 中正式记录了选择斗地主作为教程游戏的 决策。之后每个重大决策（协议格式、状态机设计、争议规则裁定）都新增一条。</p>
+<p><strong>常见误区</strong>：把 ADR 写成设计文档——ADR 记录的是<strong>决策和理由</strong>，两页以内， 重点是「当时考虑过哪些选项、为什么没选它们」。</p>
+<h2 id="7-文档工程-p0-已在练-给出框架">7. 文档工程 ｜ P0（已在练，给出框架）</h2>
+<p><strong>要点</strong>：Diátaxis 框架把文档分四象限——教程（学习导向）、操作指南（任务导向）、 参考（信息导向）、解释（理解导向）。四类受众和写法完全不同，混写是大多数 文档难读的根因。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://diataxis.fr/">Diátaxis</a>（一手，框架官网）</li></ul>
+<p><strong>本项目落地</strong>：现有文档恰好可以归类——<code>docs/learning/</code> 是教程+解释、 <code>scripts/README.md</code> 是操作指南、<code>docs/rules/</code> 是参考、ADR 是解释。 写新文档前先问「这是四象限里的哪一类」，避免在规则参考里夹学习心得。</p>
+<p><strong>常见误区</strong>：文档求全求长。Diátaxis 的核心洞见是「一篇文档只服务一种需求」。</p>
+<h2 id="8-可观测性-p1-阶段-3-起步-p2-完善">8. 可观测性 ｜ P1（阶段 3 起步，P2 完善）</h2>
+<p><strong>要点</strong>：三大信号——日志（带时间戳的事件）、指标（随时间聚合的数值）、 链路追踪（一次请求跨组件的完整路径）；现代实践强调三者<strong>关联</strong>而非孤立。 OpenTelemetry 是厂商中立的事实标准。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://opentelemetry.io/docs/concepts/observability-primer/">OpenTelemetry — Observability Primer</a>（一手，概念入门最佳起点）</li></ul>
+<p><strong>本项目落地</strong>：分三步走，别一上来就上全家桶——</p>
+<ol><li>阶段 3：结构化日志先行（Go 标准库 <code>log/slog</code>），每条对局事件带 room_id/player_id</li><li>阶段 4 联调：学会用日志还原一局完整对局（这就是&quot;可观测&quot;的最朴素定义）</li><li>P2：给 Gate/Node 加最基础的指标（在线连接数、消息吞吐），体验 OTel SDK</li></ol>
+<p><strong>常见误区</strong>：把可观测性等同于「装个监控面板」。先问自己：服务器半夜出 bug， 我手头的日志能不能还原案发现场？</p>
+<h2 id="9-安全-p2-但有两条-p0-红线">9. 安全 ｜ P2（但有两条 P0 红线）</h2>
+<p><strong>要点</strong>：OWASP Top 10（2025 版）是应用安全的标准风险清单，前三位：失效的 访问控制、安全配置错误、软件供应链失效。对游戏服务器，核心心法是 <strong>「永远不信任客户端」</strong>——所有规则判定在服务端，客户端只发意图。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://owasp.org/Top10/2025/">OWASP Top 10:2025</a>（一手，2025 正式版）</li></ul>
+<p><strong>本项目落地</strong>：两条 P0 红线现在就生效——</p>
+<ol><li>服务端权威：手牌、牌堆顺序、随机数只存在于服务端（规则文档第 6 节已确立）</li><li>机密不入库：<code>.env</code> 已在 gitignore；将来有 token/密钥绝不硬编码</li></ol>
+<p>其余（输入校验强化、依赖漏洞扫描 <code>govulncheck</code>、限流）到阶段 5 再练。</p>
+<p><strong>常见误区</strong>：学习项目跳过安全意识培养——「服务端权威」这一条恰恰是游戏 服务器架构的根，从第一行协议代码就该体现。</p>
+<h2 id="10-配置与部署运维-p2">10. 配置与部署运维 ｜ P2</h2>
+<p><strong>要点</strong>：Twelve-Factor App 是云时代应用的体检表，对本项目最相关的三条： 配置存环境变量（III）、依赖显式声明（II）、日志当事件流（XI）。判断配置是否 干净的试金石：「代码库现在开源，会不会泄露任何凭据？」</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://12factor.net/config">The Twelve-Factor App</a>（一手，方法论原典）</li></ul>
+<p><strong>本项目落地</strong>：due 框架原生支持配置文件 + 环境变量；Redis/etcd 地址等 环境差异项逐步从代码移到配置。部署（systemd/容器、正式二进制）在 <code>scripts/README.md</code> 已有预留笔记，阶段 5 实践。</p>
+<p><strong>常见误区</strong>：本地开发图省事把地址硬编码——养成习惯比改造成本低得多。</p>
+<h2 id="11-交付效能度量-p2-先知道-后实践">11. 交付效能度量 ｜ P2（先知道，后实践）</h2>
+<p><strong>要点</strong>：DORA 四大指标——部署频率、变更前置时间（吞吐）；变更失败率、 恢复时间（稳定性）。2025 报告新增返工率（Rework Rate），并转向七种团队 画像，把摩擦、倦怠纳入可持续效能。这是「工程实践是否有效」的科学衡量尺。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://dora.dev/research/2024/dora-report/">DORA 官网与年度报告</a>（一手）</li><li><a href="https://cloud.google.com/devops/state-of-devops">Google Cloud — State of DevOps</a>（一手，2025 版入口）</li></ul>
+<p><strong>本项目落地</strong>：单人项目不必算指标，但可以用它的<strong>方向感</strong>自检： 提交到推送的间隔是否在变短（前置时间）？推上去的代码多久发现问题（失败率）？ 学习节奏是否可持续（倦怠维度）？</p>
+<h2 id="12-反过度工程化守则-单人项目专属">12. 反过度工程化守则（单人项目专属）</h2>
+<p><strong>要点</strong>：YAGNI（You Aren&#x27;t Gonna Need It，源自极限编程）——不为想象中的 未来需求写代码。配合 KISS 与「先让它工作，再让它正确，最后让它快」。</p>
+<p><strong>权威参考</strong>：</p>
+<ul><li><a href="https://martinfowler.com/bliki/Yagni.html">YAGNI — Martin Fowler</a>（一手）</li></ul>
+<p><strong>本项目的三条具体戒律</strong>：</p>
+<ol><li>规则引擎按 2~5 人设计但 MVP 只实现 2 人对局（规则文档第 8 节）——这是</li></ol>
+<p>YAGNI 的正确用法：接口留余地，实现不提前</p>
+<ol><li>不做：分布式扩容、账号系统、热更新——直到学习路线真的走到那里</li><li>每次想加「以后可能用得上」的东西，先在 ADR 里写下来代替写代码</li></ol>
+<h2 id="13-优先级总表与路线图挂接">13. 优先级总表与路线图挂接</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>优先级</th>
+<th>开始练的阶段</th>
+<th>第一个动作</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>编码质量</td>
+<td>P0</td>
+<td>已在练</td>
+<td>写牌组逻辑时对照 Go 风格指南自查</td>
+</tr>
+<tr>
+<td>测试策略</td>
+<td>P0</td>
+<td>已在练</td>
+<td>卡牌效果全部表驱动测试</td>
+</tr>
+<tr>
+<td>版本控制</td>
+<td>P0</td>
+<td>已在练</td>
+<td>保持原子提交，尝试短命分支</td>
+</tr>
+<tr>
+<td>代码评审</td>
+<td>P0</td>
+<td>阶段 1</td>
+<td>提交前过 Google 清单 + AI 交叉评审</td>
+</tr>
+<tr>
+<td>文档工程</td>
+<td>P0</td>
+<td>已在练</td>
+<td>新文档先定 Diátaxis 象限</td>
+</tr>
+<tr>
+<td>CI/CD</td>
+<td>P1</td>
+<td>阶段 2</td>
+<td>加 GitHub Actions：build+test+vet</td>
+</tr>
+<tr>
+<td>架构与 ADR</td>
+<td>P1</td>
+<td>阶段 2</td>
+<td>建 docs/adr/，补记 due 选型决策</td>
+</tr>
+<tr>
+<td>可观测性</td>
+<td>P1</td>
+<td>阶段 3</td>
+<td>用 slog 结构化日志记录对局事件</td>
+</tr>
+<tr>
+<td>安全</td>
+<td>P2（红线 P0）</td>
+<td>阶段 5</td>
+<td>红线立即生效：服务端权威 + 机密不入库</td>
+</tr>
+<tr>
+<td>配置与部署</td>
+<td>P2</td>
+<td>阶段 5</td>
+<td>环境差异项移出代码</td>
+</tr>
+<tr>
+<td>效能度量</td>
+<td>P2</td>
+<td>随时自检</td>
+<td>用四指标方向感复盘学习节奏</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="14-来源可信度说明">14. 来源可信度说明</h2>
+<ul><li><strong>一手权威</strong>（直接采信）：IEEE/SWEBOK、Google eng-practices 与 Go 风格指南、</li></ul>
+<p>Go 官方文档、martinfowler.com、dora.dev、OWASP、OpenTelemetry 官方文档、 12factor.net、diataxis.fr、Nygard 原文</p>
+<ul><li><strong>二手参考</strong>（仅佐证概览）：Wikipedia、各厂商博客（Octopus、GitLab 等对</li></ul>
+<p>OWASP/DORA 新版的解读，已与一手来源交叉核对，未发现冲突）</p>
+<ul><li>所有「2025/2026 最新版」表述（SWEBOK v4.0、OWASP Top 10:2025、DORA 2025</li></ul>
+<p>报告）均经检索核实，非凭记忆。</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

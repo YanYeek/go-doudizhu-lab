@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Route 与 Event | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link active" href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">due 04</p>
+        <h1>Route 与 Event</h1>
+        <p>解释 connect/disconnect 警告，以及路由和事件的根本区别。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像人说话 vs 门铃响</h2>
+          <p>Route 是玩家主动说“我要做什么”；Event 是门铃、进门、离开这些自动发生的信号。两者都能被前台记录，但来源完全不同。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>两条平行通道</h2>
+          
+<svg viewBox="0 0 760 260" role="img" aria-label="Route 和 Event">
+  <rect x="70" y="55" width="260" height="140" rx="20" class="svg-box"/><text x="200" y="92" text-anchor="middle" class="svg-title">Route</text><text x="200" y="126" text-anchor="middle" class="svg-small">客户端主动发消息</text><text x="200" y="156" text-anchor="middle" class="svg-small">Greet / Login / PlayCard</text>
+  <rect x="430" y="55" width="260" height="140" rx="20" class="svg-accent"/><text x="560" y="92" text-anchor="middle" class="svg-title">Event</text><text x="560" y="126" text-anchor="middle" class="svg-small">框架自动触发</text><text x="560" y="156" text-anchor="middle" class="svg-small">connect / disconnect</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>WARN 无害，只是没人接事件</li><li>Route 来自客户端主动消息</li><li>Event 来自连接生命周期</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#1-结论先行-这条-warn-无害" class="toc-level-2">1. 结论先行：这条 WARN 无害</a><a href="#2-due-的两条平行通道-route-与-event" class="toc-level-2">2. due 的两条平行通道：Route 与 Event</a><a href="#3-警告的来龙去脉" class="toc-level-2">3. 警告的来龙去脉</a><a href="#4-怎么消除它" class="toc-level-2">4. 怎么消除它</a><a href="#5-为什么这条警告其实是-剧透" class="toc-level-2">5. 为什么这条警告其实是&quot;剧透&quot;</a><a href="#6-本课记住三句话" class="toc-level-2">6. 本课记住三句话</a></aside>
+        <article class="content">
+          <h1 id="due-学习-04-路由-vs-事件-与那条-connect-警告">due 学习 04：路由 vs 事件，与那条 connect 警告</h1>
+<blockquote><p>日期：2026-06-13</p><p></p><p>起因：测试客户端每次连/断，服务端都冒一条 WARN：</p><p></p><p>```text</p><p>WARN proxy.go:71 trigger event failed, cid: 1, uid: 0, event: connect, err: not found event</p><p>WARN proxy.go:71 trigger event failed, cid: 1, uid: 0, event: disconnect, err: not found event</p><p>```</p><p></p><p>本课搞清楚它是什么、为什么无害、以及背后的一个核心区分。</p></blockquote>
+<h2 id="1-结论先行-这条-warn-无害">1. 结论先行：这条 WARN 无害</h2>
+<p>它是 <strong>WARN 不是 ERROR</strong>。due 源码（<code>cluster/gate/proxy.go:70</code>）专门把&quot;没人接这个 事件&quot;的情况降级成警告——因为框架预期你<strong>本来就可能不处理每个事件</strong>。所以它是 提示，不是出错。</p>
+<h2 id="2-due-的两条平行通道-route-与-event">2. due 的两条平行通道：Route 与 Event</h2>
+<p>这是本课最该记住的区分：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th><strong>Route（路由）</strong></th>
+<th><strong>Event（事件）</strong></th>
+</tr></thead>
+<tbody>
+<tr>
+<td>谁触发</td>
+<td>客户端<strong>主动发</strong>一条消息</td>
+<td>框架在<strong>连接生命周期</strong>自动发</td>
+</tr>
+<tr>
+<td>例子</td>
+<td><code>Greet=1</code></td>
+<td><code>connect</code> / <code>reconnect</code> / <code>disconnect</code></td>
+</tr>
+<tr>
+<td>在 Node 上怎么接</td>
+<td><code>Proxy().Router().AddRouteHandler</code></td>
+<td><code>Proxy().AddEventHandler</code></td>
+</tr>
+<tr>
+<td>处理器签名</td>
+<td><code>func(ctx node.Context)</code></td>
+<td><code>func(ctx node.Context)</code>（一样）</td>
+</tr>
+</tbody>
+</table></div>
+<p>两者都最终走到一个 <code>node.Context</code>，但来源完全不同：路由是&quot;客户端说了句话&quot;， 事件是&quot;框架替你观察到连接状态变了&quot;。</p>
+<h2 id="3-警告的来龙去脉">3. 警告的来龙去脉</h2>
+<pre><code class="language-text">客户端连接 ──▶ Gate 触发 connect 事件 ──▶ 找一个登记了 connect 处理器的 Node
+                                              └─ 没找到 → ErrNotFoundEvent → WARN</code></pre>
+<p>我们之前只给 Node 注册了 <code>Greet</code> 这条<strong>路由</strong>处理器（<code>internal/greet</code>）， <strong>没注册任何事件处理器</strong>。所以客户端一连上，Gate 想把 connect 事件交给某个 Node， dispatcher 在事件表里查不到（<code>internal/dispatcher/dispatcher.go:79</code> 返回 <code>ErrNotFoundEvent</code>），Gate 就记一条 WARN。断开时同理。</p>
+<p>日志里两个字段的含义：</p>
+<ul><li><code>cid: 1 / 2</code>：连接编号（connection id），每个新连接递增。测试客户端跑两次就有两个。</li><li><code>uid: 0</code>：这条连接<strong>还没绑定到任何玩家</strong>（还没登录）。uid 为 0 = 匿名连接。</li></ul>
+<h2 id="4-怎么消除它">4. 怎么消除它</h2>
+<p>给 Node 注册连接/断开事件处理器即可——&quot;终于有人接这个事件了&quot;：</p>
+<pre><code class="language-go">gameNode.Proxy().AddEventHandler(cluster.Connect, onConnect)
+gameNode.Proxy().AddEventHandler(cluster.Disconnect, onDisconnect)</code></pre>
+<p>事件常量（<code>cluster</code> 包）：<code>Connect</code>、<code>Reconnect</code>、<code>Disconnect</code>。</p>
+<p>这一步在 <code>internal/session</code> 里实现（见下一课/下一个提交）。注册之后，连接的 建立与断开都有 Node 在处理，WARN 随之消失。</p>
+<h2 id="5-为什么这条警告其实是-剧透">5. 为什么这条警告其实是&quot;剧透&quot;</h2>
+<p><code>uid: 0</code> 和这条 WARN 一起在提醒：<strong>还没有&quot;玩家&quot;概念</strong>。处理 connect/disconnect 事件正是玩家系统的起点——上线时记录&quot;谁来了&quot;，掉线时清理。等之后做登录、用 <code>ctx.BindNode</code> 把连接绑定到一个 uid，事件处理器里就能拿到真正的玩家身份， 而不再是 uid 0。</p>
+<h2 id="6-本课记住三句话">6. 本课记住三句话</h2>
+<ol><li>Route 是客户端主动发的消息，Event 是框架自动发的连接生命周期信号。</li><li><code>not found event</code> 警告 = 有连接事件发生，但没有 Node 登记处理它，无害。</li><li>用 <code>AddEventHandler</code> 注册 connect/disconnect 处理器即可消除，这也是玩家系统的起点。</li></ol>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

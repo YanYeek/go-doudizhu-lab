@@ -23,7 +23,7 @@ import (
 //   - connect/disconnect 事件：连接的建立与断开。
 //
 // 注册事件处理器后，Gate 转发来的 connect/disconnect 就有 Node 接收，
-// 不再出现 "not found event" 警告（见 docs/learning/07-route-vs-event.md）。
+// 不再出现 "not found event" 警告（见 docs/learning/08-route-vs-event.html）。
 func Register(proxy *node.Proxy) {
 	proxy.Router().AddRouteHandler(route.Login, onLogin)
 	proxy.AddEventHandler(cluster.Connect, onConnect)
