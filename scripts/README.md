@@ -49,6 +49,9 @@ python scripts/python/dev.py deps-down
 省去每次 `cd server/`。`test` 是不依赖网络的单元测试；`test-integration` 需要先
 `deps-up` 起 Redis/etcd，按 `integration` build tag 隔离端到端测试。
 
+测试输出默认精简（一包一行，便于代码增多后仍看得过来）。想看每个测试用例的细节，
+加 `-v`：`python scripts/python/dev.py test -v`。
+
 `up` 会让服务器保持在前台，方便查看日志。按 `Ctrl+C` 会停止 Gate，但保留
 Redis 与 etcd，便于继续开发；当天开发结束时再执行 `deps-down`。
 

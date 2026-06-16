@@ -188,15 +188,20 @@ def up() -> None:
 # 下面 test / vet / build 是对 go 命令的便捷包装。它们看着只是一行 go，但价值在于
 # 「从仓库根目录就能跑」——脚本内部已切到 server/，省去每次手动 cd server/ 再敲 go。
 # 这是有意保留的，不要因为「只是一行 go 命令」就删掉。
-def test() -> None:
+def test(verbose: bool = False) -> None:
     # 单元测试：纯逻辑，不依赖 Redis/etcd/Gate，毫秒级跑完。
     # 集成测试文件用 `//go:build integration` 标记隔离，默认不参与，
     # 所以这里 go test ./... 只会跑单元测试。
+    # 默认一包一行（成功不啰嗦，抗增长）；-v 列出每个测试用例，调试时用。
     require_command("go")
-    run(["go", "test", "./..."])
+    command = ["go", "test"]
+    if verbose:
+        command.append("-v")
+    command.append("./...")
+    run(command)
 
 
-def test_integration() -> None:
+def test_integration(verbose: bool = False) -> None:
     # 集成测试：测 due 路由、登录、推送等端到端行为，需要真实依赖先就绪。
     # 这类测试文件顶部加 `//go:build integration`，用 -tags integration 才会编译运行。
     require_command("go")
@@ -212,7 +217,11 @@ def test_integration() -> None:
             f"当前未就绪：{', '.join(missing)}。"
         )
     print("\n运行集成测试（带 integration build tag 的测试）。")
-    run(["go", "test", "-tags", "integration", "./..."])
+    command = ["go", "test", "-tags", "integration"]
+    if verbose:
+        command.append("-v")
+    command.append("./...")
+    run(command)
 
 
 def vet() -> None:
@@ -283,8 +292,19 @@ def create_parser() -> argparse.ArgumentParser:
         "doctor": "检查本机开发环境",
     }
 
-    for name, help_text in commands.items():
-        subparsers.add_parser(name, help=help_text)
+    created = {
+        name: subparsers.add_parser(name, help=help_text)
+        for name, help_text in commands.items()
+    }
+
+    # 只有测试命令支持 -v：默认精简，按需调出每个测试用例的细节。
+    for name in ("test", "test-integration"):
+        created[name].add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="显示每个测试用例的运行结果（调试单个测试时用）",
+        )
 
     return parser
 
@@ -307,7 +327,8 @@ def main() -> int:
     }
 
     try:
-        commands[args.command]()
+        kwargs = {"verbose": args.verbose} if hasattr(args, "verbose") else {}
+        commands[args.command](**kwargs)
     except KeyboardInterrupt:
         print("\n已停止。")
         return 130
