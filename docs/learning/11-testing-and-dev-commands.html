@@ -40,7 +40,7 @@
         </article>
       </section>
       <div class="content-layout">
-        <aside class="toc"><strong>本页目录</strong><a href="#1-dev-py-该管什么-编排-不是包装一切" class="toc-level-2">1. dev.py 该管什么：编排，不是包装一切</a><a href="#2-单元测试-vs-集成测试-比-服务器-客户端-更有用的划分" class="toc-level-2">2. 单元测试 vs 集成测试：比&quot;服务器/客户端&quot;更有用的划分</a><a href="#3-测试输出-成功安静-失败大声" class="toc-level-2">3. 测试输出：&quot;成功安静，失败大声&quot;</a><a href="#4-一个澄清-npm-的-分开脚本-其实是什么" class="toc-level-2">4. 一个澄清：npm 的&quot;分开脚本&quot;其实是什么</a><a href="#5-顺带-这些图该用什么画" class="toc-level-2">5. 顺带：这些图该用什么画</a><a href="#记住四句话" class="toc-level-2">记住四句话</a></aside>
+        <aside class="toc"><strong>本页目录</strong><a href="#1-dev-py-该管什么-编排-不是包装一切" class="toc-level-2">1. dev.py 该管什么：编排，不是包装一切</a><a href="#2-单元测试-vs-集成测试-比-服务器-客户端-更有用的划分" class="toc-level-2">2. 单元测试 vs 集成测试：比&quot;服务器/客户端&quot;更有用的划分</a><a href="#3-测试输出-成功安静-失败大声" class="toc-level-2">3. 测试输出：&quot;成功安静，失败大声&quot;</a><a href="#4-一个澄清-npm-的-分开脚本-其实是什么" class="toc-level-2">4. 一个澄清：npm 的&quot;分开脚本&quot;其实是什么</a><a href="#5-顺带-这些图该用什么画" class="toc-level-2">5. 顺带：这些图该用什么画</a><a href="#6-测试代码现在要不要深挖" class="toc-level-2">6. 测试代码现在要不要深挖？</a><a href="#记住五句话" class="toc-level-2">记住五句话</a></aside>
         <article class="content">
           <h1 id="测试与开发命令的划分">测试与开发命令的划分</h1>
 <blockquote><p>日期：2026-06-17</p><p></p><p>这篇不是 due 框架知识，而是从几个&quot;测试命令该怎么放&quot;的问题里沉淀出来的工程判断。</p><p>沉淀下来，免得以后又在同样的地方反复纠结。</p></blockquote>
@@ -122,8 +122,41 @@ dev.py test -v     # 详细：每个用例 + 子测试</code></pre>
 <p><code>python dev.py test</code> / <code>dev.py up</code> / <code>dev.py build</code> 是一模一样的结构： <strong>一个工具、多个命名子命令</strong>。所以 dev.py 已经就是 npm 模型了。真把它拆成三个 独立 <code>.py</code>，反而要把&quot;等端口、启 Docker&quot;的共享逻辑复制三份，更糟。</p>
 <h2 id="5-顺带-这些图该用什么画">5. 顺带：这些图该用什么画</h2>
 <p>做这些说明图时，别用 AI 栅格生图，用代码生成的 SVG（本仓库 <code>build_learning_html.py</code> 就是这么干的）。原因：结构图 / 流程图 / 对照图全靠<strong>精确的文字标签</strong>，而 AI 栅格 生图恰恰在带标签的技术图上会文字模糊、标签错乱。SVG 文字精确、能进 git、能改、 缩放不糊。AI 生图擅长的是纯插画式比喻，对&quot;讲清结构&quot;帮助不大。</p>
-<h2 id="记住四句话">记住四句话</h2>
-<ol><li>开发脚本管编排，不是包装一切；包 go 命令只为从根目录直接跑，是便利不是功能。</li><li>测试按&quot;单元 / 集成&quot;分比按&quot;服务器 / 客户端&quot;分更有用，用 build tag 隔离。</li><li>测试输出&quot;成功安静、失败大声&quot;；丰富度用 <code>-v</code> 按需打开，别设成默认。</li><li>技术结构图用代码生成的 SVG，比 AI 栅格生图更准、更可维护。</li></ol>
+<h2 id="6-测试代码现在要不要深挖">6. 测试代码现在要不要深挖？</h2>
+<p>写到这里很容易冒出一个问题：要不要停下来，专门去深入学测试代码（比如 <code>card_test.go</code>）？ 答案是——<strong>先专注功能逻辑（<code>card.go</code>），测试代码只&quot;顺带读&quot;，别现在把测试当独立学科深挖。</strong></p>
+<p>三个理由：</p>
+<ol><li><strong>Go 的测试几乎没有&quot;框架&quot;要学。</strong> <code>card_test.go</code> 里全是普通 Go——循环、map、</li></ol>
+<p><code>t.Run</code>、<code>t.Errorf</code>。没有 C# 那种 <code>[TestMethod]</code>、Mock、Fixture 一大套。所以&quot;测试代码&quot; 现在比被测的 <code>card.go</code> 还简单，没多少可深学的。</p>
+<ol><li><strong>现阶段测试的价值在&quot;思想&quot;不在&quot;机制&quot;。</strong> 读测试是为了看<strong>哪些行为值得验证、边界在哪</strong></li></ol>
+<p>（54 张、ID 唯一、大小王特例），这是顺着功能代码读几分钟的事，不是单独课题。</p>
+<ol><li><strong>真正的测试深水区，等&quot;有难测的东西&quot;再学才有意义。</strong> mock/fake、状态机测试、集成测试</li></ol>
+<p>脚手架——现在没有那个问题，提前学就是学完就忘（违背学习区原则）。</p>
+<p>但有个区别要分清：</p>
+<blockquote><p><strong>&quot;边写边测&quot;的纪律现在就保持</strong>（每写一块逻辑就配表驱动测试）；</p><p><strong>&quot;把测试当学科深挖&quot;还不到时候。</strong></p></blockquote>
+<p>什么时候该深挖测试（到时需求自然会拽你去学）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>触发点</th>
+<th>会逼你学的测试技巧</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>写 <code>pattern</code> 包</td>
+<td>牌型多 → 大表驱动，体会表驱动的真正威力</td>
+</tr>
+<tr>
+<td>写 <code>room</code> / <code>game</code> 状态机</td>
+<td>要&quot;假装&quot;网络和对手 → fake / 测试替身</td>
+</tr>
+<tr>
+<td>测 due 路由</td>
+<td>用 <code>dev.py test-integration</code> + 起真实依赖跑端到端</td>
+</tr>
+</tbody>
+</table></div>
+<p>一句话：<strong>让测试技巧被需求拽出来，别提前囤货。</strong></p>
+<h2 id="记住五句话">记住五句话</h2>
+<ol><li>开发脚本管编排，不是包装一切；包 go 命令只为从根目录直接跑，是便利不是功能。</li><li>测试按&quot;单元 / 集成&quot;分比按&quot;服务器 / 客户端&quot;分更有用，用 build tag 隔离。</li><li>测试输出&quot;成功安静、失败大声&quot;；丰富度用 <code>-v</code> 按需打开，别设成默认。</li><li>技术结构图用代码生成的 SVG，比 AI 栅格生图更准、更可维护。</li><li>测试先学&quot;思想&quot;（验什么、边界在哪）；&quot;机制&quot;（mock / 集成脚手架）等真有难测的东西再深挖。</li></ol>
         </article>
       </div>
     </main>
