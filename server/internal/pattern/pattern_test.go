@@ -31,7 +31,15 @@ func TestIdentify(t *testing.T) {
 		{name: "炸弹-含杂牌非法", cards: []card.Card{{Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Ten}}, want: Invalid},
 
 		{name: "空牌组非法", cards: []card.Card{}, want: Invalid},
-		{name: "五张暂不识别", cards: []card.Card{{Rank: card.Three}, {Rank: card.Four}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Seven}}, want: Invalid},
+
+		{name: "顺子-五连", cards: []card.Card{{Rank: card.Three}, {Rank: card.Four}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Seven}}, want: Straight},
+		{name: "顺子-到A", cards: []card.Card{{Rank: card.Ten}, {Rank: card.Jack}, {Rank: card.Queen}, {Rank: card.King}, {Rank: card.Ace}}, want: Straight},
+		{name: "顺子-乱序也认", cards: []card.Card{{Rank: card.Six}, {Rank: card.Three}, {Rank: card.Five}, {Rank: card.Seven}, {Rank: card.Four}}, want: Straight},
+		{name: "顺子-含2非法", cards: []card.Card{{Rank: card.Jack}, {Rank: card.Queen}, {Rank: card.King}, {Rank: card.Ace}, {Rank: card.Two}}, want: Invalid},
+		{name: "顺子-含王非法", cards: []card.Card{{Rank: card.Ten}, {Rank: card.Jack}, {Rank: card.Queen}, {Rank: card.King}, {Rank: card.SmallJoker}}, want: Invalid},
+		{name: "顺子-不连续非法", cards: []card.Card{{Rank: card.Three}, {Rank: card.Four}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Eight}}, want: Invalid},
+		{name: "顺子-有重复非法", cards: []card.Card{{Rank: card.Three}, {Rank: card.Four}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Six}}, want: Invalid},
+		{name: "四连不算顺子", cards: []card.Card{{Rank: card.Three}, {Rank: card.Four}, {Rank: card.Five}, {Rank: card.Six}}, want: Invalid},
 	}
 
 	for _, tt := range tests {

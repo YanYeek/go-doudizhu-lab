@@ -14,10 +14,12 @@ func TestParse(t *testing.T) {
 		wantOK   bool
 		wantKind Kind
 		wantRank card.Rank
+		wantLen  int
 	}{
-		{name: "单张K", cards: []card.Card{{Rank: card.King}}, wantOK: true, wantKind: Single, wantRank: card.King},
-		{name: "对子7", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Seven}}, wantOK: true, wantKind: Pair, wantRank: card.Seven},
-		{name: "火箭", cards: []card.Card{{Rank: card.SmallJoker}, {Rank: card.BigJoker}}, wantOK: true, wantKind: Rocket},
+		{name: "单张K", cards: []card.Card{{Rank: card.King}}, wantOK: true, wantKind: Single, wantRank: card.King, wantLen: 1},
+		{name: "对子7", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Seven}}, wantOK: true, wantKind: Pair, wantRank: card.Seven, wantLen: 2},
+		{name: "顺子取最小点", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Three}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Four}}, wantOK: true, wantKind: Straight, wantRank: card.Three, wantLen: 5},
+		{name: "火箭", cards: []card.Card{{Rank: card.SmallJoker}, {Rank: card.BigJoker}}, wantOK: true, wantKind: Rocket, wantLen: 2},
 		{name: "非法", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Eight}}, wantOK: false},
 	}
 
@@ -28,10 +30,13 @@ func TestParse(t *testing.T) {
 				t.Fatalf("Parse ok = %v, 期望 %v", ok, tt.wantOK)
 			}
 			if !ok {
-				return // 非法牌组不用再比 kind/rank
+				return // 非法牌组不用再比后面的字段
 			}
 			if play.Kind != tt.wantKind {
 				t.Errorf("Kind = %s, 期望 %s", play.Kind, tt.wantKind)
+			}
+			if play.Len != tt.wantLen {
+				t.Errorf("Len = %d, 期望 %d", play.Len, tt.wantLen)
 			}
 			if tt.wantKind != Rocket && play.Rank != tt.wantRank { // 火箭不看点数
 				t.Errorf("Rank = %v, 期望 %v", play.Rank, tt.wantRank)
@@ -43,10 +48,12 @@ func TestParse(t *testing.T) {
 // TestPlayBeats 覆盖比大小的各条规则：同型比点数、类型不同不能压、炸弹压一切、火箭最大。
 func TestPlayBeats(t *testing.T) {
 	// 局部闭包当「迷你构造器」，让用例表更紧凑。闭包是赋给变量的函数。
-	single := func(r card.Rank) Play { return Play{Kind: Single, Rank: r} }
-	pair := func(r card.Rank) Play { return Play{Kind: Pair, Rank: r} }
-	three := func(r card.Rank) Play { return Play{Kind: Three, Rank: r} }
-	bomb := func(r card.Rank) Play { return Play{Kind: Bomb, Rank: r} }
+	single := func(r card.Rank) Play { return Play{Kind: Single, Rank: r, Len: 1} }
+	pair := func(r card.Rank) Play { return Play{Kind: Pair, Rank: r, Len: 2} }
+	three := func(r card.Rank) Play { return Play{Kind: Three, Rank: r, Len: 3} }
+	bomb := func(r card.Rank) Play { return Play{Kind: Bomb, Rank: r, Len: 4} }
+	// 顺子要带长度：minR 是最小那张的点数，n 是张数。
+	straight := func(minR card.Rank, n int) Play { return Play{Kind: Straight, Rank: minR, Len: n} }
 	rocket := Play{Kind: Rocket}
 
 	tests := []struct {
@@ -71,6 +78,13 @@ func TestPlayBeats(t *testing.T) {
 		{"火箭压单张", rocket, single(card.Two), true},
 		{"火箭压炸弹", rocket, bomb(card.King), true},
 		{"炸弹压不过火箭", bomb(card.King), rocket, false},
+
+		{"大顺子压小顺子(同长)", straight(card.Four, 5), straight(card.Three, 5), true},
+		{"小顺子压不过大顺子", straight(card.Three, 5), straight(card.Four, 5), false},
+		{"长度不同的顺子不能比", straight(card.Three, 6), straight(card.Four, 5), false},
+		{"炸弹压顺子", bomb(card.Three), straight(card.Ten, 5), true},
+		{"顺子压不过炸弹", straight(card.Ten, 5), bomb(card.Three), false},
+		{"火箭压顺子", rocket, straight(card.Ten, 5), true},
 	}
 
 	for _, tt := range tests {

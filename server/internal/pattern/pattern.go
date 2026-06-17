@@ -5,19 +5,24 @@
 // 当前实现：单张、对子、三张、炸弹、火箭；后续再加顺子、连对、三带、飞机等。
 package pattern
 
-// 跨包导入：用 card 包定义的牌类型。pattern 依赖 card，card 不反过来依赖 pattern（单向）。
-import "github.com/YanYeek/go-doudizhu-lab/server/internal/card"
+import (
+	"sort" // 标准库：排序。判断顺子是否连续要先排序。
+
+	// 跨包导入：用 card 包定义的牌类型。pattern 依赖 card，card 不反过来依赖 pattern（单向）。
+	"github.com/YanYeek/go-doudizhu-lab/server/internal/card"
+)
 
 // Kind 是牌型的种类。和 card 里的 Suit/Rank 一样，用 `type + iota` 当枚举。
 type Kind uint8
 
 const (
-	Invalid Kind = iota // 0 非法/无法识别的牌组
-	Single              // 1 单张：1 张牌
-	Pair                // 2 对子：2 张同点数的牌
-	Three               // 3 三张：3 张同点数的牌
-	Bomb                // 4 炸弹：4 张同点数的牌
-	Rocket              // 5 火箭：小王 + 大王（斗地主最大的牌型）
+	Invalid  Kind = iota // 0 非法/无法识别的牌组
+	Single               // 1 单张：1 张牌
+	Pair                 // 2 对子：2 张同点数的牌
+	Three                // 3 三张：3 张同点数的牌
+	Straight             // 4 顺子：5 张及以上、点数连续（不含 2 和大小王）
+	Bomb                 // 5 炸弹：4 张同点数的牌
+	Rocket               // 6 火箭：小王 + 大王（斗地主最大的牌型）
 )
 
 // String 让 Kind 打印成可读文字（满足 fmt.Stringer），方便测试和日志。
@@ -29,6 +34,8 @@ func (k Kind) String() string {
 		return "对子"
 	case Three:
 		return "三张"
+	case Straight:
+		return "顺子"
 	case Bomb:
 		return "炸弹"
 	case Rocket:
@@ -66,6 +73,10 @@ func Identify(cards []card.Card) Kind {
 		}
 		return Invalid
 	default:
+		// len 为 0 或 ≥ 5：目前只有顺子（5+ 连续单张）落在这里。
+		if isStraight(cards) {
+			return Straight
+		}
 		return Invalid
 	}
 }
@@ -90,4 +101,41 @@ func isRocket(cards []card.Card) bool {
 	// 行尾的 || 表示表达式还没完，下一行接着写（Go 允许在二元运算符后换行）。
 	return (a == card.SmallJoker && b == card.BigJoker) ||
 		(a == card.BigJoker && b == card.SmallJoker)
+}
+
+// isStraight 判断是否是顺子：5 张及以上、点数连续、无重复，且不含 2 和大小王。
+func isStraight(cards []card.Card) bool {
+	if len(cards) < 5 {
+		return false
+	}
+
+	// 把点数抽成 []int 以便排序。顺子里不能出现 2 和大小王（点数 > A）。
+	ranks := make([]int, len(cards))
+	for i, c := range cards {
+		if c.Rank > card.Ace { // Ace=14；比它大的是 2、小王、大王
+			return false
+		}
+		ranks[i] = int(c.Rank) // 把 card.Rank 转成 int 才能用 sort.Ints
+	}
+
+	sort.Ints(ranks) // 标准库排序，原地升序排列
+
+	// 排好序后，每张必须正好比前一张大 1：既保证连续，也顺带排除了重复。
+	for i := 1; i < len(ranks); i++ {
+		if ranks[i] != ranks[i-1]+1 {
+			return false
+		}
+	}
+	return true
+}
+
+// minRank 返回牌组里最小的点数。调用方保证 cards 非空。
+func minRank(cards []card.Card) card.Rank {
+	m := cards[0].Rank
+	for _, c := range cards[1:] {
+		if c.Rank < m {
+			m = c.Rank
+		}
+	}
+	return m
 }
