@@ -7,7 +7,10 @@
 //   - 大小顺序：3 < 4 < … < K < A < 2 < 小王 < 大王。
 package card
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand/v2"
+)
 
 // Suit 是牌的花色。只用于显示，不参与大小比较。
 type Suit uint8
@@ -109,4 +112,20 @@ func NewDeck() []Card {
 	deck = append(deck, Card{ID: id, Rank: BigJoker, Suit: Joker})
 
 	return deck
+}
+
+// Shuffle 用 Fisher-Yates 算法就地打乱一副牌。
+//
+// 关于"就地"——这是 Go 切片最容易踩的点：切片本质是指向底层数组的"句柄"，
+// 把它传进函数后交换其中的元素，会直接改到调用方手里那一份，不产生副本。
+// 所以这里没有返回值：调用方传进来的 deck 洗完就是乱的了。
+//
+// 随机用的是 math/rand/v2（Go 1.22+）：它自动随机播种，不再需要老 math/rand
+// 那句 rand.Seed(...)；rand.IntN(n) 返回 [0, n) 的随机整数。
+func Shuffle(deck []Card) {
+	// 从最后一张往前：每一步把当前牌和它之前（含自己）的随机一张交换。
+	for i := len(deck) - 1; i > 0; i-- {
+		j := rand.IntN(i + 1)
+		deck[i], deck[j] = deck[j], deck[i]
+	}
 }

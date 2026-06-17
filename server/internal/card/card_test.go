@@ -56,6 +56,37 @@ func TestRankOrdering(t *testing.T) {
 	}
 }
 
+// TestShufflePreservesCards 验证洗牌只改顺序、不增不减不改牌。
+// 洗牌是随机的，所以不测"具体洗成什么顺序"，而测一个对任何洗牌都成立的不变量：
+// 洗完还是同样的 54 张（ID 集合不变、每张内容不变）。
+// 这是测随机函数的正确姿势——测性质，不测输出。
+func TestShufflePreservesCards(t *testing.T) {
+	deck := NewDeck()
+	before := make(map[int]Card, len(deck))
+	for _, c := range deck {
+		before[c.ID] = c
+	}
+
+	Shuffle(deck) // 就地洗牌：deck 这一份直接被打乱
+
+	if len(deck) != 54 {
+		t.Fatalf("洗牌后应仍有 54 张，实际 %d", len(deck))
+	}
+	seen := make(map[int]bool, len(deck))
+	for _, c := range deck {
+		if seen[c.ID] {
+			t.Errorf("洗牌后出现重复 ID: %d", c.ID)
+		}
+		seen[c.ID] = true
+		if before[c.ID] != c {
+			t.Errorf("ID %d 的牌内容被改了：%v -> %v", c.ID, before[c.ID], c)
+		}
+	}
+	if len(seen) != 54 {
+		t.Errorf("洗牌后应有 54 个唯一 ID，实际 %d", len(seen))
+	}
+}
+
 // TestCardString 验证显示文本，重点是王没有花色。
 func TestCardString(t *testing.T) {
 	tests := []struct {
