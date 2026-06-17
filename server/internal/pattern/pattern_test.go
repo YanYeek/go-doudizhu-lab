@@ -17,11 +17,21 @@ func TestIdentify(t *testing.T) {
 		// 切片字面量里，内层 {Rank: ...} 省略了类型——Go 会从元素类型 card.Card 推断。
 		{name: "单张", cards: []card.Card{{Rank: card.Three}}, want: Single},
 		{name: "单张-王也算", cards: []card.Card{{Rank: card.BigJoker}}, want: Single},
+
 		{name: "对子", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Seven}}, want: Pair},
-		{name: "两张不同点数不是对子", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Eight}}, want: Invalid},
-		{name: "大小王不是对子", cards: []card.Card{{Rank: card.SmallJoker}, {Rank: card.BigJoker}}, want: Invalid},
+		{name: "两张不同点数非法", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Eight}}, want: Invalid},
+
+		{name: "火箭-小大王", cards: []card.Card{{Rank: card.SmallJoker}, {Rank: card.BigJoker}}, want: Rocket},
+		{name: "火箭-顺序无关", cards: []card.Card{{Rank: card.BigJoker}, {Rank: card.SmallJoker}}, want: Rocket},
+
+		{name: "三张", cards: []card.Card{{Rank: card.Five}, {Rank: card.Five}, {Rank: card.Five}}, want: Three},
+		{name: "三张-含杂牌非法", cards: []card.Card{{Rank: card.Five}, {Rank: card.Five}, {Rank: card.Six}}, want: Invalid},
+
+		{name: "炸弹", cards: []card.Card{{Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}}, want: Bomb},
+		{name: "炸弹-含杂牌非法", cards: []card.Card{{Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Ten}}, want: Invalid},
+
 		{name: "空牌组非法", cards: []card.Card{}, want: Invalid},
-		{name: "三张暂不识别", cards: []card.Card{{Rank: card.Five}, {Rank: card.Five}, {Rank: card.Five}}, want: Invalid},
+		{name: "五张暂不识别", cards: []card.Card{{Rank: card.Three}, {Rank: card.Four}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Seven}}, want: Invalid},
 	}
 
 	for _, tt := range tests {
