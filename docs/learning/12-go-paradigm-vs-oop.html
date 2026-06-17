@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Go 范式 vs 面向对象 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a><a class="nav-link " href="11-testing-and-dev-commands.html"><span>11 · 测试</span>11 测试与开发命令的划分</a><a class="nav-link active" href="12-go-paradigm-vs-oop.html"><span>12 · Go</span>12 Go 范式 vs 面向对象</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Go</p>
+        <h1>Go 范式 vs 面向对象</h1>
+        <p>从 C#/TS 的类，到 Go 的类型 + 方法 + 包 + 隐式接口。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像招人看能力，不看出身</h2>
+          <p>C#/TS 要先声明“我属于某个类、实现某个接口”（出示文凭）；Go 只看你会不会做那件事——有 String() 方法就自动算会打印，不用挂牌子。接口是“能做什么”的清单，不是“你是谁”的标签。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>类 vs 类型 + 方法 + 接口</h2>
+
+<svg viewBox="0 0 760 280" role="img" aria-label="类 与 类型+方法+接口+包">
+  <rect x="55" y="60" width="280" height="175" rx="20" class="svg-box"/>
+  <text x="195" y="94" text-anchor="middle" class="svg-title">C# / TS：class</text>
+  <text x="195" y="130" text-anchor="middle" class="svg-small">数据 + 方法 + implements</text>
+  <text x="195" y="160" text-anchor="middle" class="svg-small">全捆在一个大括号里</text>
+  <text x="195" y="200" text-anchor="middle" class="svg-small">靠继承组织</text>
+  <text x="565" y="34" text-anchor="middle" class="svg-label">Go：拆成可组合的小块</text>
+  <rect x="430" y="52" width="270" height="40" rx="12" class="svg-box"/><text x="565" y="78" text-anchor="middle" class="svg-small">struct：只放数据</text>
+  <rect x="430" y="100" width="270" height="40" rx="12" class="svg-box"/><text x="565" y="126" text-anchor="middle" class="svg-small">func(接收者)：方法挂外面</text>
+  <rect x="430" y="148" width="270" height="40" rx="12" class="svg-accent"/><text x="565" y="174" text-anchor="middle" class="svg-small">接口：有方法就隐式满足</text>
+  <rect x="430" y="196" width="270" height="40" rx="12" class="svg-box"/><text x="565" y="222" text-anchor="middle" class="svg-small">package：组织边界</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>Go 没有类：类型管数据、方法挂外面、包做组织</li><li>接口隐式满足，有方法就算实现，不写 implements</li><li>组合代替继承，工厂函数代替构造函数，大小写代替 public/private</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#一句话定调" class="toc-level-2">一句话定调</a><a href="#转变-1-type-suit-uint8-给基础类型起个有身份的新名字" class="toc-level-2">转变 1:`type Suit uint8` —— 给基础类型起个有身份的新名字</a><a href="#转变-2-const-iota-go-式枚举" class="toc-level-2">转变 2:`const ( ... iota ... )` —— Go 式枚举</a><a href="#转变-3-方法在类型外面-靠-接收者-绑定" class="toc-level-2">转变 3:方法在类型外面,靠&quot;接收者&quot;绑定</a><a href="#转变-4-隐式接口-最大的脑筋急转弯" class="toc-level-2">转变 4:隐式接口 —— 最大的脑筋急转弯</a><a href="#转变-5-struct-是纯数据袋-没有继承" class="toc-level-2">转变 5:`struct` 是纯数据袋,没有继承</a><a href="#回到-card-go-为什么这样组织" class="toc-level-2">回到 card.go:为什么这样组织</a><a href="#c-ts-go-总对照表" class="toc-level-2">C#/TS ↔ Go 总对照表</a><a href="#接下来会碰到的-本文件还没出现" class="toc-level-2">接下来会碰到的(本文件还没出现)</a><a href="#记住三句话" class="toc-level-2">记住三句话</a></aside>
+        <article class="content">
+          <h1 id="go-范式-从-c-ts-的-类-到-go-的-类型-方法-包">Go 范式:从 C#/TS 的&quot;类&quot;到 Go 的&quot;类型 + 方法 + 包&quot;</h1>
+<blockquote><p>日期:2026-06-17</p><p></p><p>从 C#/TypeScript 切到 Go,最大的坎不是语法,是<strong>组织代码的世界观</strong>变了。</p><p>本篇以 <code>server/internal/card/card.go</code> 为主线,逐个对照讲清这层转变。</p></blockquote>
+<h2 id="一句话定调">一句话定调</h2>
+<blockquote><p>C#/TS 的世界观是&quot;万物皆类&quot;——数据和行为都塞进 <code>class {}</code>,靠继承和 <code>implements</code> 组织。</p><p>Go 故意拆开了:<strong>类型只管数据,方法挂在类型外面,接口靠&quot;长得像&quot;自动满足,包(package)取代类做组织单元。</strong></p></blockquote>
+<p>Go 没有 <code>class</code>、<code>extends</code>、<code>implements</code>、构造函数、<code>public/private</code> 关键字。 这些熟悉的东西全被更小的几块拼出来了。</p>
+<h2 id="转变-1-type-suit-uint8-给基础类型起个有身份的新名字">转变 1:<code>type Suit uint8</code> —— 给基础类型起个有身份的新名字</h2>
+<pre><code class="language-go">type Suit uint8   // 底层是 uint8,但它是一个&quot;新类型&quot;</code></pre>
+<p>C# 写 <code>enum Suit : byte {...}</code>。Go 没有 <code>enum</code> 关键字,做法是先定义一个新类型。 关键:<code>Suit</code> 和 <code>uint8</code> 是<strong>两个不同类型</strong>,不能混用(<code>Suit(5)</code> 才能转)。这给你类型安全。 而且 Go 的 <code>type</code> 更通用——能给任何底层类型(int/string/函数/切片)起新名字并挂方法。</p>
+<h2 id="转变-2-const-iota-go-式枚举">转变 2:<code>const ( ... iota ... )</code> —— Go 式枚举</h2>
+<pre><code class="language-go">const (
+    Three Rank = iota + 3 // iota=0 → 3（最小）
+    Four                  // iota=1 → 4
+    ...
+    BigJoker              // iota=14 → 17（最大）
+)</code></pre>
+<p><code>iota</code> 是 const 块里的行计数器,从 0 每行 +1,后续行自动套用首行表达式。 <code>iota + 3</code> 让数值刚好等于&quot;牌力强弱&quot;:于是比大小直接 <code>a.Rank &gt; b.Rank</code>,不用查表。 这是 Go 常见的&quot;用数值编码语义&quot;技巧。</p>
+<h2 id="转变-3-方法在类型外面-靠-接收者-绑定">转变 3:方法在类型外面,靠&quot;接收者&quot;绑定</h2>
+<p>视觉上和 C#/TS 最不一样的地方:</p>
+<pre><code class="language-go">func (s Suit) String() string { ... }
+//   ^^^^^^^^ 接收者(receiver) = Go 的 this/self,而且要显式写出、可自己命名</code></pre>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>C# / TS</th>
+<th>Go</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>方法位置</td>
+<td>写在 <code>class { }</code> <strong>内部</strong></td>
+<td>写在类型<strong>外部</strong>,用接收者绑定</td>
+</tr>
+<tr>
+<td>this</td>
+<td>隐式</td>
+<td>显式写出(这里叫 <code>s</code>)</td>
+</tr>
+<tr>
+<td>一个类型的方法</td>
+<td>必须都在 class 体内</td>
+<td>可散落在同包任意文件</td>
+</tr>
+</tbody>
+</table></div>
+<p>好处:<code>type Suit uint8</code> 永远是干净的数据声明,行为单独挂;甚至能给同包里别人定义的类型加方法。</p>
+<h2 id="转变-4-隐式接口-最大的脑筋急转弯">转变 4:隐式接口 —— 最大的脑筋急转弯</h2>
+<p>代码里三个 <code>String()</code> 方法,从没写过 <code>implements Stringer</code>,却能被 <code>fmt.Println</code> 自动识别。因为:</p>
+<pre><code class="language-go">type Stringer interface { String() string }   // 标准库 fmt 里的接口</code></pre>
+<blockquote><p>规则:任何类型只要&quot;碰巧&quot;有 <code>String() string</code> 方法,就自动算实现了 <code>Stringer</code>——不声明、不继承。</p></blockquote>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>C# / TS</th>
+<th>Go</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>声明实现</td>
+<td><code>class Card : IStringer</code>(必须写)</td>
+<td>什么都不写,方法对上就算</td>
+</tr>
+<tr>
+<td>心智模型</td>
+<td>&quot;我<strong>是</strong>一个 IStringer&quot;</td>
+<td>&quot;我<strong>能</strong>做 String() 这件事&quot;</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>fmt.Println(card)</code> 内部逻辑是:&quot;这玩意儿有 <code>String()</code> 吗?有就调它。&quot;于是打印 <code>♠3</code> 而不是 <code>{0 3 0}</code>。 <strong>Go 不问&quot;你是什么类&quot;,只问&quot;你会做什么&quot;。</strong> 接口是使用方定义的小契约,不是实现方挂的标签。</p>
+<h2 id="转变-5-struct-是纯数据袋-没有继承">转变 5:<code>struct</code> 是纯数据袋,没有继承</h2>
+<pre><code class="language-go">type Card struct {
+    ID   int
+    Rank Rank
+    Suit Suit
+}</code></pre>
+<p><code>struct</code> 就是字段集合,纯数据。和 C# class 的区别:</p>
+<ul><li><strong>没有继承</strong>:Go 没有 <code>extends</code>,复用靠组合(把一个 struct 嵌进另一个),信条是&quot;组合优于继承&quot;。</li><li><strong>数据与行为分离</strong>:Card 里只有字段,<code>String()</code> 在外面。</li></ul>
+<h2 id="回到-card-go-为什么这样组织">回到 card.go:为什么这样组织</h2>
+<pre><code class="language-text">package card        ① 组织单元:一个包 = 一个概念(牌),不是一个类一个文件
+type Suit + 常量 + String()   ② 类型紧跟它的常量和方法
+type Rank + 常量 + String()
+var rankLabels                ③ 小写 = 包私有的辅助数据
+type Card + String()          ④ 组合前两者的主类型
+func NewDeck() []Card         ⑤ 工厂函数放最后</code></pre>
+<ul><li><strong>包取代类做组织单元</strong>:<code>package card</code> 是&quot;牌&quot;这个概念的边界,调用方写 <code>card.NewDeck()</code>、<code>card.Spade</code>,包名就是命名空间。</li><li><strong>大小写 = 可见性</strong>:<code>Suit</code>/<code>Card</code>/<code>NewDeck</code> 大写导出(≈ public);<code>rankLabels</code> 小写仅包内(≈ private)。没有关键字,看首字母即知。</li><li><strong>没有构造函数</strong>:<code>Card{ID: 0, Rank: Three}</code> 这种结构体字面量就是原生创建方式;复杂创建写个 <code>NewXxx</code> 工厂函数(自由函数,不属于任何类型)。</li><li><strong>返回 <code>[]Card</code> 而非自定义集合类</strong>:Go 偏爱内置 slice/map。<code>make([]Card, 0, 54)</code> 的 <code>54</code> 是预分配容量,append 时不反复扩容。</li></ul>
+<h2 id="c-ts-go-总对照表">C#/TS ↔ Go 总对照表</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>概念</th>
+<th>C# / TypeScript</th>
+<th>Go</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>枚举</td>
+<td><code>enum Suit {...}</code></td>
+<td><code>type T uint8</code> + <code>const(...iota...)</code></td>
+</tr>
+<tr>
+<td>类</td>
+<td><code>class Card {...}</code></td>
+<td><code>type Card struct {...}</code></td>
+</tr>
+<tr>
+<td>方法</td>
+<td>写在 class 体内</td>
+<td>写在类型外,带接收者</td>
+</tr>
+<tr>
+<td>this</td>
+<td>隐式</td>
+<td>显式接收者 <code>(c Card)</code></td>
+</tr>
+<tr>
+<td>接口实现</td>
+<td><code>implements</code> 显式声明</td>
+<td>方法对上就隐式满足</td>
+</tr>
+<tr>
+<td>继承</td>
+<td><code>class B : A</code></td>
+<td>没有,用组合/嵌入</td>
+</tr>
+<tr>
+<td>可见性</td>
+<td><code>public</code>/<code>private</code></td>
+<td>首字母大小写</td>
+</tr>
+<tr>
+<td>构造函数</td>
+<td><code>new Card(...)</code></td>
+<td>工厂函数 <code>NewXxx()</code> + 字面量</td>
+</tr>
+<tr>
+<td>集合</td>
+<td><code>List&lt;T&gt;</code>/自定义类</td>
+<td>内置 slice <code>[]T</code> / <code>map</code></td>
+</tr>
+<tr>
+<td>命名空间</td>
+<td><code>namespace</code></td>
+<td>包(目录)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="接下来会碰到的-本文件还没出现">接下来会碰到的(本文件还没出现)</h2>
+<ul><li>**指针接收者 <code>func (c *Card)</code>**:现在的 <code>func (c Card)</code> 是值接收者,方法拿到的是拷贝、改不动原物(对只读的 <code>String()</code> 正好)。等写&quot;出牌、改手牌&quot;时需要 <code>*</code> 才改得到原物。</li><li><strong>接口真正发力</strong>:写牌型比较时定义小接口,体会隐式满足的威力。</li><li><strong>组合(嵌入)</strong>:替代继承复用代码。</li></ul>
+<h2 id="记住三句话">记住三句话</h2>
+<ol><li>Go 没有类:类型管数据、方法挂在外面、包做组织单元。</li><li>接口隐式满足——有对应方法就算实现,不写 <code>implements</code>;问&quot;会做什么&quot;不问&quot;是什么&quot;。</li><li>组合代替继承,工厂函数代替构造函数,大小写代替 <code>public/private</code>。</li></ol>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

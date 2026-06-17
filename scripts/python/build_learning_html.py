@@ -165,6 +165,17 @@ PAGES: tuple[PageSpec, ...] = (
         "testing",
         ("开发脚本管编排，包 go 命令只为根目录直接跑", "单元/集成用 build tag 隔离，单元飞快、集成按需", "测试输出成功安静、失败大声，-v 按需调细节"),
     ),
+    PageSpec(
+        "12-go-paradigm-vs-oop",
+        "Go",
+        "Go 范式 vs 面向对象",
+        "从 C#/TS 的类，到 Go 的类型 + 方法 + 包 + 隐式接口。",
+        "像招人看能力，不看出身",
+        "C#/TS 要先声明“我属于某个类、实现某个接口”（出示文凭）；Go 只看你会不会做那件事——有 String() 方法就自动算会打印，不用挂牌子。接口是“能做什么”的清单，不是“你是谁”的标签。",
+        "类 vs 类型 + 方法 + 接口",
+        "paradigm",
+        ("Go 没有类：类型管数据、方法挂外面、包做组织", "接口隐式满足，有方法就算实现，不写 implements", "组合代替继承，工厂函数代替构造函数，大小写代替 public/private"),
+    ),
 )
 
 
@@ -407,6 +418,20 @@ def diagram(kind: str) -> str:
 <svg viewBox="0 0 760 260" role="img" aria-label="Route 和 Event">
   <rect x="70" y="55" width="260" height="140" rx="20" class="svg-box"/><text x="200" y="92" text-anchor="middle" class="svg-title">Route</text><text x="200" y="126" text-anchor="middle" class="svg-small">客户端主动发消息</text><text x="200" y="156" text-anchor="middle" class="svg-small">Greet / Login / PlayCard</text>
   <rect x="430" y="55" width="260" height="140" rx="20" class="svg-accent"/><text x="560" y="92" text-anchor="middle" class="svg-title">Event</text><text x="560" y="126" text-anchor="middle" class="svg-small">框架自动触发</text><text x="560" y="156" text-anchor="middle" class="svg-small">connect / disconnect</text>
+</svg>"""
+    if kind == "paradigm":
+        return """
+<svg viewBox="0 0 760 280" role="img" aria-label="类 与 类型+方法+接口+包">
+  <rect x="55" y="60" width="280" height="175" rx="20" class="svg-box"/>
+  <text x="195" y="94" text-anchor="middle" class="svg-title">C# / TS：class</text>
+  <text x="195" y="130" text-anchor="middle" class="svg-small">数据 + 方法 + implements</text>
+  <text x="195" y="160" text-anchor="middle" class="svg-small">全捆在一个大括号里</text>
+  <text x="195" y="200" text-anchor="middle" class="svg-small">靠继承组织</text>
+  <text x="565" y="34" text-anchor="middle" class="svg-label">Go：拆成可组合的小块</text>
+  <rect x="430" y="52" width="270" height="40" rx="12" class="svg-box"/><text x="565" y="78" text-anchor="middle" class="svg-small">struct：只放数据</text>
+  <rect x="430" y="100" width="270" height="40" rx="12" class="svg-box"/><text x="565" y="126" text-anchor="middle" class="svg-small">func(接收者)：方法挂外面</text>
+  <rect x="430" y="148" width="270" height="40" rx="12" class="svg-accent"/><text x="565" y="174" text-anchor="middle" class="svg-small">接口：有方法就隐式满足</text>
+  <rect x="430" y="196" width="270" height="40" rx="12" class="svg-box"/><text x="565" y="222" text-anchor="middle" class="svg-small">package：组织边界</text>
 </svg>"""
     if kind == "testing":
         return """
