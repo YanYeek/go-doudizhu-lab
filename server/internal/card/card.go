@@ -114,6 +114,28 @@ func NewDeck() []Card {
 	return deck
 }
 
+// Deal 把一副 54 张牌发成斗地主的开局：三家各 17 张，外加 3 张底牌（地主牌）。
+// 传入的牌应已洗好；因为牌已随机，这里按顺序切块发即可，和逐张轮流发同样公平。
+//
+// 关键：每家手牌都是 make+copy 出来的独立副本，而不是 deck 的子切片。
+// 若写成 hands[i] = deck[i*17:(i+1)*17]，子切片会和 deck 共享同一底层数组——
+// 玩家之后排序、出牌、append 时会串改到 deck 甚至别家手牌。copy 出独立副本才安全。
+func Deal(deck []Card) (hands [3][]Card, bottom []Card) {
+	if len(deck) != 54 {
+		panic(fmt.Sprintf("Deal 需要一副 54 张的牌，实际 %d 张", len(deck)))
+	}
+
+	for i := range hands {
+		hands[i] = make([]Card, 17)
+		copy(hands[i], deck[i*17:(i+1)*17])
+	}
+
+	bottom = make([]Card, 3)
+	copy(bottom, deck[51:54])
+
+	return hands, bottom
+}
+
 // Shuffle 用 Fisher-Yates 算法就地打乱一副牌。
 //
 // 关于"就地"——这是 Go 切片最容易踩的点：切片本质是指向底层数组的"句柄"，

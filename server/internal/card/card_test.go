@@ -87,6 +87,53 @@ func TestShufflePreservesCards(t *testing.T) {
 	}
 }
 
+// TestDealDistributesAllCards 验证发牌不重不漏：三家各 17、底牌 3，合起来正好 54 张。
+func TestDealDistributesAllCards(t *testing.T) {
+	deck := NewDeck()
+	hands, bottom := Deal(deck)
+
+	for i, h := range hands {
+		if len(h) != 17 {
+			t.Errorf("第 %d 家应有 17 张，实际 %d", i, len(h))
+		}
+	}
+	if len(bottom) != 3 {
+		t.Errorf("底牌应有 3 张，实际 %d", len(bottom))
+	}
+
+	seen := make(map[int]bool, 54)
+	collect := func(cards []Card) {
+		for _, c := range cards {
+			if seen[c.ID] {
+				t.Errorf("ID %d 出现在多处", c.ID)
+			}
+			seen[c.ID] = true
+		}
+	}
+	for _, h := range hands {
+		collect(h)
+	}
+	collect(bottom)
+	if len(seen) != 54 {
+		t.Errorf("发出的牌应共 54 张唯一，实际 %d", len(seen))
+	}
+}
+
+// TestDealHandsAreIndependent 验证每家手牌是独立副本，而不是 deck 的子切片别名。
+// 这是发牌最容易踩的坑：若用 deck[:17] 直接切，手牌会和 deck 共享底层数组，
+// 改一处串一片。这里改动手牌后，断言原 deck 不受影响。
+func TestDealHandsAreIndependent(t *testing.T) {
+	deck := NewDeck()
+	original := deck[0] // 发牌前记下 deck[0]
+	hands, _ := Deal(deck)
+
+	hands[0][0] = Card{ID: 999, Rank: BigJoker, Suit: Joker} // 篡改第一家第一张
+
+	if deck[0] != original {
+		t.Errorf("改手牌竟影响了 deck[0]：说明手牌是别名而非副本（deck[0]=%v）", deck[0])
+	}
+}
+
 // TestCardString 验证显示文本，重点是王没有花色。
 func TestCardString(t *testing.T) {
 	tests := []struct {
