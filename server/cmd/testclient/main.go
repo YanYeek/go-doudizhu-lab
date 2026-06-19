@@ -10,6 +10,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dobyte/due/network/ws/v2"
@@ -17,6 +18,7 @@ import (
 	"github.com/dobyte/due/v2/cluster/client"
 	"github.com/dobyte/due/v2/log"
 
+	"github.com/YanYeek/go-doudizhu-lab/server/internal/card"
 	"github.com/YanYeek/go-doudizhu-lab/server/internal/route"
 )
 
@@ -29,6 +31,7 @@ func main() {
 	loginCh := make(chan string, 1)
 	greetCh := make(chan string, 1)
 	notifyCh := make(chan string, 1)
+	playCh := make(chan string, 1)
 	cli.Proxy().AddRouteHandler(route.Login, func(ctx *client.Context) {
 		var res route.LoginRes
 		if err := ctx.Parse(&res); err != nil {
@@ -54,6 +57,14 @@ func main() {
 		}
 		greetCh <- res.Message
 	})
+	cli.Proxy().AddRouteHandler(route.PlayCheck, func(ctx *client.Context) {
+		var res route.PlayCheckRes
+		if err := ctx.Parse(&res); err != nil {
+			log.Errorf("解析出牌校验响应失败: %v", err)
+			return
+		}
+		playCh <- fmt.Sprintf("合法=%v 牌型=%s", res.Valid, res.Kind)
+	})
 
 	cli.Init()
 	cli.Start()
@@ -75,6 +86,13 @@ func main() {
 
 	// 3) 收取服务端在登录后主动推来的通知（没有对应请求）。
 	log.Infof("服务端主动推送: %s", await(notifyCh))
+
+	// 4) 出牌校验：提交一手牌，服务端用 pattern 引擎判牌型（服务端权威）。
+	//    先发一个合法对子（两张 7），再发一个非法组合（7 和 8）。
+	push(conn, 3, route.PlayCheck, &route.PlayCheckReq{Cards: []card.Card{{Rank: card.Seven}, {Rank: card.Seven}}})
+	log.Infof("出牌校验[7,7]: %s", await(playCh))
+	push(conn, 4, route.PlayCheck, &route.PlayCheckReq{Cards: []card.Card{{Rank: card.Seven}, {Rank: card.Eight}}})
+	log.Infof("出牌校验[7,8]: %s", await(playCh))
 }
 
 // push 发送一条消息，失败直接终止（测试客户端无需重试）。

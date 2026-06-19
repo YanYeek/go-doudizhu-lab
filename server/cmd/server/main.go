@@ -8,6 +8,7 @@ import (
 	"github.com/dobyte/due/v2/cluster/gate"
 	"github.com/dobyte/due/v2/cluster/node"
 
+	"github.com/YanYeek/go-doudizhu-lab/server/internal/game"
 	"github.com/YanYeek/go-doudizhu-lab/server/internal/greet"
 	"github.com/YanYeek/go-doudizhu-lab/server/internal/session"
 )
@@ -29,7 +30,8 @@ func main() {
 		node.WithLocator(redis.NewLocator()),
 		node.WithRegistry(etcd.NewRegistry()),
 	)
-	greet.Register(gameNode.Proxy().Router())   // 路由：处理客户端主动发来的消息
+	greet.Register(gameNode.Proxy().Router())   // 路由：问候（打通链路用）
+	game.Register(gameNode.Proxy().Router())    // 路由：对局逻辑（出牌校验等）
 	session.Register(gameNode.Proxy())          // 事件：处理连接的建立与断开
 
 	// 单进程内同时运行 Gate 与 Node（单体模式），适合学习阶段。
