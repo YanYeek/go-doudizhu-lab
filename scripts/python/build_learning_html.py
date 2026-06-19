@@ -526,6 +526,7 @@ def page_html(spec: PageSpec, content: str, headings: list[tuple[int, str, str]]
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(spec.title)} | go-doudizhu-lab</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="learning.css">
 </head>
 <body>
@@ -585,6 +586,7 @@ def index_html() -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>斗地主学习笔记 | go-doudizhu-lab</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="learning.css">
 </head>
 <body>
@@ -856,9 +858,20 @@ svg { width: 100%; height: auto; }
 """
 
 
+# 统一的「笔记」图标（浏览器标签页 favicon）。用内联 SVG，缩放不糊、零外部依赖。
+FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect x="6" y="3" width="20" height="26" rx="3" fill="#f4b942" stroke="#e6ac29" stroke-width="1"/>
+  <line x1="10" y1="11" x2="22" y2="11" stroke="#fffaf0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="16" x2="22" y2="16" stroke="#fffaf0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="21" x2="18" y2="21" stroke="#fffaf0" stroke-width="2" stroke-linecap="round"/>
+</svg>
+"""
+
+
 def write_files() -> None:
     LEARNING_DIR.mkdir(parents=True, exist_ok=True)
     STYLE_PATH.write_text(CSS, encoding="utf-8", newline="\n")
+    (LEARNING_DIR / "favicon.svg").write_text(FAVICON, encoding="utf-8", newline="\n")
     (LEARNING_DIR / "index.html").write_text(clean_output(index_html()), encoding="utf-8", newline="\n")
     for spec in PAGES:
         source = md_source_path(spec.slug)
