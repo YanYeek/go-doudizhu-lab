@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>单一职责：功能要不要拆 | go-doudizhu-lab</title>
+  <link rel="stylesheet" href="learning.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">斗地主学习笔记</a>
+      <nav><a class="nav-link " href="00-comfort-zone-quiz.html"><span>00 · 诊断</span>00 Go 舒适区诊断</a><a class="nav-link " href="01-roadmap.html"><span>01 · 路线</span>01 学习区路线图</a><a class="nav-link " href="02-modern-go-toolchain.html"><span>02 · Go</span>02 现代 Go 工具链</a><a class="nav-link " href="03-due-container-lifecycle.html"><span>03 · due 01</span>03 Container 与生命周期</a><a class="nav-link " href="04-software-engineering-map.html"><span>04 · 地图</span>04 软件工程能力全景地图</a><a class="nav-link " href="05-due-gate-websocket.html"><span>05 · due 02</span>05 Gate 与 WebSocket</a><a class="nav-link " href="06-development-learning-workflow.html"><span>06 · 工作流</span>06 纵向切片开发工作流</a><a class="nav-link " href="07-first-route-and-codec.html"><span>07 · due 03</span>07 第一条路由与编解码器</a><a class="nav-link " href="08-route-vs-event.html"><span>08 · due 04</span>08 Route 与 Event</a><a class="nav-link " href="09-login-and-binding.html"><span>09 · due 05</span>09 登录与连接绑定</a><a class="nav-link " href="10-server-push.html"><span>10 · due 06</span>10 服务端主动推送</a><a class="nav-link " href="11-testing-and-dev-commands.html"><span>11 · 测试</span>11 测试与开发命令的划分</a><a class="nav-link " href="12-go-paradigm-vs-oop.html"><span>12 · Go</span>12 Go 范式 vs 面向对象</a><a class="nav-link active" href="13-single-responsibility-and-layers.html"><span>13 · 设计</span>13 单一职责：功能要不要拆</a></nav>
+    </aside>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">设计</p>
+        <h1>单一职责：功能要不要拆</h1>
+        <p>valid + kind 一起返回 OK 吗？SRP 真正在说什么，以及拆分的时机。</p>
+      </section>
+      <section class="visual-grid">
+        <article class="panel analogy">
+          <span class="panel-label">生活类比</span>
+          <h2>像分诊台和医生</h2>
+          <p>handler 像分诊台：登记诉求、转交、把结果递回；pattern.Parse 像医生，才做诊断。诊断报告同时写“有没有病 + 是什么病”很正常——那是一次诊断的两面。分诊台因流程变，医生因医学知识变，天然两个角色。</p>
+        </article>
+        <article class="panel diagram">
+          <span class="panel-label">图形化理解</span>
+          <h2>职责分层与拆分时机</h2>
+
+<svg viewBox="0 0 760 320" role="img" aria-label="职责分层与拆分时机">
+  <rect x="40" y="38" width="250" height="86" rx="16" class="svg-box"/>
+  <text x="165" y="70" text-anchor="middle" class="svg-title">handler（game.go）</text>
+  <text x="165" y="98" text-anchor="middle" class="svg-small">解析→委托→响应</text>
+  <path d="M292 81 H468" class="svg-arrow"/><text x="380" y="70" text-anchor="middle" class="svg-small">委托</text>
+  <rect x="470" y="38" width="250" height="86" rx="16" class="svg-accent"/>
+  <text x="595" y="70" text-anchor="middle" class="svg-title">pattern.Parse</text>
+  <text x="595" y="98" text-anchor="middle" class="svg-small">牌型识别（纯逻辑）</text>
+  <text x="595" y="152" text-anchor="middle" class="svg-label">一次识别 → (合法? + 什么型)</text>
+  <text x="595" y="174" text-anchor="middle" class="svg-small">同一答案的两面，不用拆</text>
+  <text x="380" y="226" text-anchor="middle" class="svg-label">将来 = 多个独立检查，handler 负责组合</text>
+  <rect x="60" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="135" y="272" text-anchor="middle" class="svg-small">牌型合法?</text>
+  <rect x="225" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="300" y="272" text-anchor="middle" class="svg-small">轮到你?</text>
+  <rect x="390" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="465" y="272" text-anchor="middle" class="svg-small">牌在手上?</text>
+  <rect x="555" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="630" y="272" text-anchor="middle" class="svg-small">压得过上家?</text>
+</svg>
+        </article>
+        <article class="panel takeaways">
+          <span class="panel-label">抓手</span>
+          <h2>读完要带走什么</h2>
+          <ul><li>SRP 是“一个变化的原因”，不是“一个返回值”</li><li>handler 管 I/O、pattern 管逻辑，已分两层</li><li>校验长出多个检查时再拆成独立函数，由 handler 组合</li></ul>
+        </article>
+      </section>
+      <div class="content-layout">
+        <aside class="toc"><strong>本页目录</strong><a href="#结论先行" class="toc-level-2">结论先行</a><a href="#1-valid-kind-一起返回-为什么没问题" class="toc-level-2">1. valid + kind 一起返回,为什么没问题</a><a href="#2-单一职责-到底指什么" class="toc-level-2">2. 「单一职责」到底指什么</a><a href="#3-这段代码其实已经分好职责了" class="toc-level-2">3. 这段代码其实已经分好职责了</a><a href="#4-要分开-的直觉对-但时机在后面" class="toc-level-2">4. 「要分开」的直觉对——但时机在后面</a><a href="#生活类比-分诊台-vs-医生" class="toc-level-2">生活类比:分诊台 vs 医生</a><a href="#记住三句话" class="toc-level-2">记住三句话</a></aside>
+        <article class="content">
+          <h1 id="单一职责-一个功能要不要拆开">单一职责:一个功能要不要拆开</h1>
+<blockquote><p>日期:2026-06-19</p><p></p><p>起因:出牌校验的 handler 同时返回「合不合法」+「是什么牌型」。这算不算</p><p>「一个函数干了两件事」、该不该拆?借这个问题把「单一职责(SRP)」讲透。</p></blockquote>
+<h2 id="结论先行">结论先行</h2>
+<p>这样返回<strong>没问题,而且恰恰是对的</strong>。但「功能要分开」的直觉在更大的尺度上对—— 只是这里还没到拆的时候。下面分三层说清楚。</p>
+<h2 id="1-valid-kind-一起返回-为什么没问题">1. valid + kind 一起返回,为什么没问题</h2>
+<p>关键:<strong>它们是同一个问题的答案,不是两件事。</strong></p>
+<p>「这手牌是什么型 / 合不合法」本质是<strong>一次判定</strong>——<code>pattern.Parse</code> 一次就同时 算出了这两样:</p>
+<pre><code class="language-go">play, ok := pattern.Parse(req.Cards)
+//   |        +-- ok        = 合不合法
+//   +-- play.Kind = 什么牌型</code></pre>
+<p><code>ok</code> 和 <code>kind</code> 来自<strong>同一次识别</strong>。硬拆成「先问合不合法、再问什么型」,要么把 Parse 跑两遍(浪费),要么造个别扭的 API。放一个响应里,是「一次操作、一个完整答案」。</p>
+<blockquote><p>顺带:<code>valid</code> 其实能从 <code>kind</code> 推出来(kind==&quot;非法&quot; 就是不合法)。留着它纯粹是</p><p>对客户端友好——前端读个 bool 比拿字符串比&quot;非法&quot;舒服。这是 API 友好度的选择,</p><p>不是职责问题。</p></blockquote>
+<h2 id="2-单一职责-到底指什么">2. 「单一职责」到底指什么</h2>
+<p>很多人误以为 SRP = 「一个函数只返回一个值 / 只做一件极小的事」。<strong>不是。</strong> SRP 的原话是:</p>
+<blockquote><p><strong>一个模块应该只有一个「变化的原因」。</strong></p></blockquote>
+<p>返回一个带多个字段的结构体,<strong>完全不违反 SRP</strong>——职责说的是「为什么会改」, 不是「返回几个字段」。</p>
+<h2 id="3-这段代码其实已经分好职责了">3. 这段代码其实已经分好职责了</h2>
+<p>看分层,职责早就拆开了:</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>层</th>
+<th>谁</th>
+<th>职责</th>
+<th>因什么而改</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>网络适配</td>
+<td><code>handlePlayCheck</code>(game.go)</td>
+<td>解析请求、调用逻辑、回响应</td>
+<td>协议变了</td>
+</tr>
+<tr>
+<td>领域逻辑</td>
+<td><code>pattern.Parse</code>(pattern 包)</td>
+<td>识别牌型(纯逻辑)</td>
+<td>牌型规则变了</td>
+</tr>
+</tbody>
+</table></div>
+<p>handler <strong>没有</strong>把牌型判定写在自己体内,而是委托给 <code>pattern.Parse</code>。<strong>这就是正确的 拆分</strong>:I/O 一层、逻辑一层,两个不同的变化原因,已经在两个不同的地方。</p>
+<h2 id="4-要分开-的直觉对-但时机在后面">4. 「要分开」的直觉对——但时机在后面</h2>
+<p>真正该拆成多个功能的,是当「出牌校验」长大的时候。完整的出牌校验其实是 <strong>好几个独立检查</strong>:</p>
+<pre><code class="language-text">1. 这几张牌凑成合法牌型吗?    &lt;- 现在只有这个(pattern.Parse)
+2. 现在轮到你了吗?            &lt;- 将来(需要对局状态)
+3. 这些牌真在你手上吗?        &lt;- 将来(按 ID 查手牌)
+4. 它压得过上家吗?            &lt;- 将来(Play.Beats)</code></pre>
+<p>到那时,<strong>每个检查是一个独立函数</strong>(各自单一职责),handler 把它们<strong>组合</strong>起来:</p>
+<pre><code class="language-go">// 将来的样子(示意)
+if !play.valid()     { return 拒绝 }
+if !isYourTurn(uid)  { return 拒绝 }
+if !ownsCards(uid)   { return 拒绝 }
+if !play.Beats(last) { return 拒绝 }</code></pre>
+<p>那才是「一个功能一个功能分开」——而且会很自然地分,因为它们确实是不同的判断、 有不同的变化原因。<strong>不要为了拆而拆,等职责真的多起来再拆。</strong></p>
+<h2 id="生活类比-分诊台-vs-医生">生活类比:分诊台 vs 医生</h2>
+<p>handler 像医院的<strong>分诊台</strong>:只管登记诉求、转交给医生、把结果递回给你。 <code>pattern.Parse</code> 像<strong>医生</strong>:才做真正的诊断。诊断报告上同时写「有没有病 + 是什么 病」很正常——那是一次诊断的两面,不用拆成两次挂号。分诊台因「流程」变,医生因 「医学知识」变——两个变化原因,天然两个角色。</p>
+<h2 id="记住三句话">记住三句话</h2>
+<ol><li>SRP 是「一个变化的原因」,不是「一个返回值」;多字段的结果不违反它。</li><li>职责已经分好:handler 管 I/O、pattern 管逻辑,两层各因不同原因而改。</li><li>当校验长出「轮次 / 归属 / 压制」等多个检查时,每个才拆成独立函数,handler 负责组合——不要提前拆。</li></ol>
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

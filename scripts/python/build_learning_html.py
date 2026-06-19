@@ -176,6 +176,17 @@ PAGES: tuple[PageSpec, ...] = (
         "paradigm",
         ("Go 没有类：类型管数据、方法挂外面、包做组织", "接口隐式满足，有方法就算实现，不写 implements", "组合代替继承，工厂函数代替构造函数，大小写代替 public/private"),
     ),
+    PageSpec(
+        "13-single-responsibility-and-layers",
+        "设计",
+        "单一职责：功能要不要拆",
+        "valid + kind 一起返回 OK 吗？SRP 真正在说什么，以及拆分的时机。",
+        "像分诊台和医生",
+        "handler 像分诊台：登记诉求、转交、把结果递回；pattern.Parse 像医生，才做诊断。诊断报告同时写“有没有病 + 是什么病”很正常——那是一次诊断的两面。分诊台因流程变，医生因医学知识变，天然两个角色。",
+        "职责分层与拆分时机",
+        "srp",
+        ("SRP 是“一个变化的原因”，不是“一个返回值”", "handler 管 I/O、pattern 管逻辑，已分两层", "校验长出多个检查时再拆成独立函数，由 handler 组合"),
+    ),
 )
 
 
@@ -418,6 +429,24 @@ def diagram(kind: str) -> str:
 <svg viewBox="0 0 760 260" role="img" aria-label="Route 和 Event">
   <rect x="70" y="55" width="260" height="140" rx="20" class="svg-box"/><text x="200" y="92" text-anchor="middle" class="svg-title">Route</text><text x="200" y="126" text-anchor="middle" class="svg-small">客户端主动发消息</text><text x="200" y="156" text-anchor="middle" class="svg-small">Greet / Login / PlayCard</text>
   <rect x="430" y="55" width="260" height="140" rx="20" class="svg-accent"/><text x="560" y="92" text-anchor="middle" class="svg-title">Event</text><text x="560" y="126" text-anchor="middle" class="svg-small">框架自动触发</text><text x="560" y="156" text-anchor="middle" class="svg-small">connect / disconnect</text>
+</svg>"""
+    if kind == "srp":
+        return """
+<svg viewBox="0 0 760 320" role="img" aria-label="职责分层与拆分时机">
+  <rect x="40" y="38" width="250" height="86" rx="16" class="svg-box"/>
+  <text x="165" y="70" text-anchor="middle" class="svg-title">handler（game.go）</text>
+  <text x="165" y="98" text-anchor="middle" class="svg-small">解析→委托→响应</text>
+  <path d="M292 81 H468" class="svg-arrow"/><text x="380" y="70" text-anchor="middle" class="svg-small">委托</text>
+  <rect x="470" y="38" width="250" height="86" rx="16" class="svg-accent"/>
+  <text x="595" y="70" text-anchor="middle" class="svg-title">pattern.Parse</text>
+  <text x="595" y="98" text-anchor="middle" class="svg-small">牌型识别（纯逻辑）</text>
+  <text x="595" y="152" text-anchor="middle" class="svg-label">一次识别 → (合法? + 什么型)</text>
+  <text x="595" y="174" text-anchor="middle" class="svg-small">同一答案的两面，不用拆</text>
+  <text x="380" y="226" text-anchor="middle" class="svg-label">将来 = 多个独立检查，handler 负责组合</text>
+  <rect x="60" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="135" y="272" text-anchor="middle" class="svg-small">牌型合法?</text>
+  <rect x="225" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="300" y="272" text-anchor="middle" class="svg-small">轮到你?</text>
+  <rect x="390" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="465" y="272" text-anchor="middle" class="svg-small">牌在手上?</text>
+  <rect x="555" y="244" width="150" height="46" rx="10" class="svg-box"/><text x="630" y="272" text-anchor="middle" class="svg-small">压得过上家?</text>
 </svg>"""
     if kind == "paradigm":
         return """
