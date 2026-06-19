@@ -19,6 +19,8 @@ func TestParse(t *testing.T) {
 		{name: "单张K", cards: []card.Card{{Rank: card.King}}, wantOK: true, wantKind: Single, wantRank: card.King, wantLen: 1},
 		{name: "对子7", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Seven}}, wantOK: true, wantKind: Pair, wantRank: card.Seven, wantLen: 2},
 		{name: "顺子取最小点", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Three}, {Rank: card.Five}, {Rank: card.Six}, {Rank: card.Four}}, wantOK: true, wantKind: Straight, wantRank: card.Three, wantLen: 5},
+		{name: "三带一取主牌点", cards: []card.Card{{Rank: card.Three}, {Rank: card.King}, {Rank: card.King}, {Rank: card.King}}, wantOK: true, wantKind: ThreeWithSingle, wantRank: card.King, wantLen: 4},
+		{name: "三带二取主牌点", cards: []card.Card{{Rank: card.King}, {Rank: card.King}, {Rank: card.King}, {Rank: card.Three}, {Rank: card.Three}}, wantOK: true, wantKind: ThreeWithPair, wantRank: card.King, wantLen: 5},
 		{name: "火箭", cards: []card.Card{{Rank: card.SmallJoker}, {Rank: card.BigJoker}}, wantOK: true, wantKind: Rocket, wantLen: 2},
 		{name: "非法", cards: []card.Card{{Rank: card.Seven}, {Rank: card.Eight}}, wantOK: false},
 	}
@@ -54,6 +56,9 @@ func TestPlayBeats(t *testing.T) {
 	bomb := func(r card.Rank) Play { return Play{Kind: Bomb, Rank: r, Len: 4} }
 	// 顺子要带长度：minR 是最小那张的点数，n 是张数。
 	straight := func(minR card.Rank, n int) Play { return Play{Kind: Straight, Rank: minR, Len: n} }
+	// 三带：Rank 是主牌（3 张那个）的点数。
+	tws := func(r card.Rank) Play { return Play{Kind: ThreeWithSingle, Rank: r, Len: 4} }
+	twp := func(r card.Rank) Play { return Play{Kind: ThreeWithPair, Rank: r, Len: 5} }
 	rocket := Play{Kind: Rocket}
 
 	tests := []struct {
@@ -85,6 +90,13 @@ func TestPlayBeats(t *testing.T) {
 		{"炸弹压顺子", bomb(card.Three), straight(card.Ten, 5), true},
 		{"顺子压不过炸弹", straight(card.Ten, 5), bomb(card.Three), false},
 		{"火箭压顺子", rocket, straight(card.Ten, 5), true},
+
+		{"大三带一压小三带一", tws(card.King), tws(card.Three), true},
+		{"三带一比的是主牌(带牌不影响)", tws(card.Five), tws(card.Ten), false},
+		{"三带一压不过三带二(类型不同)", tws(card.King), twp(card.Three), false},
+		{"大三带二压小三带二", twp(card.Ace), twp(card.Three), true},
+		{"炸弹压三带一", bomb(card.Three), tws(card.Ace), true},
+		{"火箭压三带二", rocket, twp(card.Ace), true},
 	}
 
 	for _, tt := range tests {

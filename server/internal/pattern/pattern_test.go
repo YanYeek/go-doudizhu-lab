@@ -28,7 +28,12 @@ func TestIdentify(t *testing.T) {
 		{name: "三张-含杂牌非法", cards: []card.Card{{Rank: card.Five}, {Rank: card.Five}, {Rank: card.Six}}, want: Invalid},
 
 		{name: "炸弹", cards: []card.Card{{Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}}, want: Bomb},
-		{name: "炸弹-含杂牌非法", cards: []card.Card{{Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Nine}, {Rank: card.Ten}}, want: Invalid},
+
+		{name: "三带一", cards: []card.Card{{Rank: card.King}, {Rank: card.King}, {Rank: card.King}, {Rank: card.Three}}, want: ThreeWithSingle},
+		{name: "三带一-带牌在前也认", cards: []card.Card{{Rank: card.Three}, {Rank: card.King}, {Rank: card.King}, {Rank: card.King}}, want: ThreeWithSingle},
+		{name: "四张两对非法", cards: []card.Card{{Rank: card.King}, {Rank: card.King}, {Rank: card.Three}, {Rank: card.Three}}, want: Invalid},
+		{name: "三带二", cards: []card.Card{{Rank: card.King}, {Rank: card.King}, {Rank: card.King}, {Rank: card.Three}, {Rank: card.Three}}, want: ThreeWithPair},
+		{name: "三带二-带的不是对子非法", cards: []card.Card{{Rank: card.King}, {Rank: card.King}, {Rank: card.King}, {Rank: card.Three}, {Rank: card.Four}}, want: Invalid},
 
 		{name: "空牌组非法", cards: []card.Card{}, want: Invalid},
 

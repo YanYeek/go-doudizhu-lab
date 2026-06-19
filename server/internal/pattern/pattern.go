@@ -6,7 +6,8 @@
 package pattern
 
 import (
-	"sort" // 标准库：排序。判断顺子是否连续要先排序。
+	"slices" // 标准库：切片工具，这里用 slices.Equal 比较"次数形状"
+	"sort"   // 标准库：排序。判断顺子是否连续要先排序
 
 	// 跨包导入：用 card 包定义的牌类型。pattern 依赖 card，card 不反过来依赖 pattern（单向）。
 	"github.com/YanYeek/go-doudizhu-lab/server/internal/card"
@@ -16,13 +17,15 @@ import (
 type Kind uint8
 
 const (
-	Invalid  Kind = iota // 0 非法/无法识别的牌组
-	Single               // 1 单张：1 张牌
-	Pair                 // 2 对子：2 张同点数的牌
-	Three                // 3 三张：3 张同点数的牌
-	Straight             // 4 顺子：5 张及以上、点数连续（不含 2 和大小王）
-	Bomb                 // 5 炸弹：4 张同点数的牌
-	Rocket               // 6 火箭：小王 + 大王（斗地主最大的牌型）
+	Invalid         Kind = iota // 0 非法/无法识别的牌组
+	Single                      // 1 单张：1 张牌
+	Pair                        // 2 对子：2 张同点数的牌
+	Three                       // 3 三张：3 张同点数的牌
+	ThreeWithSingle             // 4 三带一：3 张同点 + 1 张单牌
+	ThreeWithPair               // 5 三带二：3 张同点 + 1 个对子
+	Straight                    // 6 顺子：5 张及以上、点数连续（不含 2 和大小王）
+	Bomb                        // 7 炸弹：4 张同点数的牌
+	Rocket                      // 8 火箭：小王 + 大王（斗地主最大的牌型）
 )
 
 // String 让 Kind 打印成可读文字（满足 fmt.Stringer），方便测试和日志。
@@ -34,6 +37,10 @@ func (k Kind) String() string {
 		return "对子"
 	case Three:
 		return "三张"
+	case ThreeWithSingle:
+		return "三带一"
+	case ThreeWithPair:
+		return "三带二"
 	case Straight:
 		return "顺子"
 	case Bomb:
@@ -68,12 +75,25 @@ func Identify(cards []card.Card) Kind {
 		}
 		return Invalid
 	case 4:
+		// 4 张：炸弹（4 同点）或三带一（3+1）。
 		if allSameRank(cards) {
 			return Bomb
 		}
+		if isThreeWithSingle(cards) {
+			return ThreeWithSingle
+		}
+		return Invalid
+	case 5:
+		// 5 张：顺子（5 连）或三带二（3+2）。
+		if isStraight(cards) {
+			return Straight
+		}
+		if isThreeWithPair(cards) {
+			return ThreeWithPair
+		}
 		return Invalid
 	default:
-		// len 为 0 或 ≥ 5：目前只有顺子（5+ 连续单张）落在这里。
+		// len 为 0 或 ≥ 6：目前只有更长的顺子落在这里。
 		if isStraight(cards) {
 			return Straight
 		}
@@ -138,4 +158,46 @@ func minRank(cards []card.Card) card.Rank {
 		}
 	}
 	return m
+}
+
+// countByRank 统计每个点数出现的次数。
+// map 取不存在的 key 会返回零值 0，所以 counts[r]++ 不必先判断 key 是否存在（呼应诊断题 Q2）。
+func countByRank(cards []card.Card) map[card.Rank]int {
+	counts := make(map[card.Rank]int) // map 必须 make 才能用
+	for _, c := range cards {
+		counts[c.Rank]++
+	}
+	return counts
+}
+
+// countShape 返回各点数出现次数的「形状」（升序）。
+// 例：三带一 → [1 3]，三带二 → [2 3]，炸弹 → [4]，对子 → [2]。
+// 把它配合 slices.Equal 比对，就能很直观地判别这些「按数量组合」的牌型。
+func countShape(cards []card.Card) []int {
+	shape := make([]int, 0)
+	for _, n := range countByRank(cards) { // range map 给出 (键, 值)；这里只要值 n
+		shape = append(shape, n)
+	}
+	sort.Ints(shape) // map 遍历顺序随机，排序后形状才稳定可比
+	return shape
+}
+
+// isThreeWithSingle 判断三带一：次数形状是 [1 3]（一张单牌 + 三张同点）。
+func isThreeWithSingle(cards []card.Card) bool {
+	return slices.Equal(countShape(cards), []int{1, 3})
+}
+
+// isThreeWithPair 判断三带二：次数形状是 [2 3]（一个对子 + 三张同点）。
+func isThreeWithPair(cards []card.Card) bool {
+	return slices.Equal(countShape(cards), []int{2, 3})
+}
+
+// tripletRank 返回出现 3 次的那个点数（三带类牌型靠主牌比大小）。调用方保证存在。
+func tripletRank(cards []card.Card) card.Rank {
+	for r, n := range countByRank(cards) {
+		if n == 3 {
+			return r
+		}
+	}
+	return 0 // 正常不会到这里
 }

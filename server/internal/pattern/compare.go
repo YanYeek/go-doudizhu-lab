@@ -25,6 +25,8 @@ func Parse(cards []card.Card) (Play, bool) {
 		// 火箭不看点数，Rank 保持零值。
 	case Straight:
 		play.Rank = minRank(cards) // 顺子用最小的那张比大小
+	case ThreeWithSingle, ThreeWithPair:
+		play.Rank = tripletRank(cards) // 三带：看 3 张那个主牌定大小，附带牌不算
 	default:
 		// 单张/对子/三张/炸弹都是同点数，取第一张就能代表整手的大小。
 		play.Rank = cards[0].Rank
